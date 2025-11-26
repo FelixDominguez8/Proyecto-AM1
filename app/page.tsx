@@ -28,10 +28,9 @@ export default function Home() {
 
     setLoading(true);
 
-    // Crear mensaje vacío del bot para rellenar con el stream
     const botMessage: Message = { role: "assistant", content: "" };
     setMessages((prev) => [...prev, botMessage]);
-    const botIndex = messages.length; // índice del mensaje recién creado
+    const botIndex = messages.length;
 
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -88,12 +87,10 @@ export default function Home() {
     <div className="flex h-screen w-full bg-zinc-100 dark:bg-black text-black dark:text-zinc-100">
       <div className="flex flex-col mx-auto w-full max-w-3xl h-full border-l border-r border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950">
 
-        {/* TOP BAR */}
         <div className="flex items-center justify-center h-14 border-b border-zinc-300 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur">
           <h1 className="text-lg font-semibold tracking-tight">Mi Chatbot Técnico</h1>
         </div>
 
-        {/* MENSAJES */}
         <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
           {messages.map((msg, i) => (
             <div
@@ -128,7 +125,6 @@ export default function Home() {
           <div ref={bottomRef} />
         </div>
 
-        {/* INPUT */}
         <div className="p-5 border-t border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950">
           <div className="relative flex items-center">
 
