@@ -1,0 +1,7 @@
+__pycache__/
+.byaldi/
+.venv/
+results/
+manuals/
+vectordb/
+chunks/
