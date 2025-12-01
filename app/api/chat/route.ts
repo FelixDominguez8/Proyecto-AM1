@@ -6,44 +6,99 @@ export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
 
-    if (!messages) {
+    if (!messages || messages.length === 0) {
       return new Response(
         JSON.stringify({ error: "Missing messages array" }),
         { status: 400 }
       );
     }
 
+    // --- 1) TOMAMOS EL MENSAJE MÁS RECIENTE DEL USUARIO ---
+    const userMessage = messages[messages.length - 1].content;
+
+    // --- 2) LLAMAMOS AL SERVIDOR PYTHON PARA HACER RAG ---
+    const url = `http://127.0.0.1:8000/?query=${encodeURIComponent(userMessage)}`;
+    const ragRes = await fetch(url, { method: "GET" });
+
+    // --- 3) TIPAMOS LOS DOCUMENTOS ---
+    interface RAGDocument {
+      text: string;
+      source: string;
+      page: number;
+      title?: string;
+    }
+
+    let retrievedDocs = "";
+
+    if (ragRes.ok) {
+      const results: RAGDocument[] = await ragRes.json();
+
+      retrievedDocs = results
+        .map((doc, index) => {
+          return `
+--- Documento ${index + 1} ---
+[Título]: ${doc.title || "Sin título"}
+[Página]: ${doc.page}
+[Source]: ${doc.source}
+[Texto]:
+${doc.text}
+          `.trim();
+        })
+        .join("\n\n");
+
+    } else {
+      retrievedDocs = "No se recolectaron los documentos";
+    }
+
+    // --- 4) IMPRIMIMOS EN CONSOLA ---
+    console.log("Retrieved Docs:\n", retrievedDocs);
+
+    // --- 5) ARMAMOS EL SYSTEM PROMPT + CONTEXTO RECUPERADO ---
     const systemPrompt = {
       role: "system",
       content: `
-    Eres un asistente técnico especializado en reparar refrigeradores, teléfonos, TVs y otros electrodomésticos.
+Eres un asistente técnico especializado en reparar refrigeradores, aires acondicionados,
+teléfonos, TVs y electrodomésticos. Tienes acceso a información proveniente de un sistema RAG.
 
-    Responde siempre en español, usando **Markdown** para el formato. Debes:
+INSTRUCCIONES IMPORTANTES:
 
-    - Usar títulos (## Título) cuando sea necesario
-    - Usar numeración o bullets para pasos
-    - Separar secciones con líneas vacías (doble salto de línea)
-    - Usar negritas o cursivas cuando convenga
-    - Ser claro y conciso, no extenderte innecesariamente
+1. Usa formato **Markdown**:
+   - Títulos con "##"
+   - Subtítulos con "###"
+   - Bullet points y numeración cuando sea útil
+   - Doble salto de línea entre secciones
+2. Divide SIEMPRE tu respuesta en estas secciones:
 
-    Ejemplo de respuesta:
+## Significado (según documentos)
+- Explica **exactamente** lo que digan los documentos encontrados.
+- Si los documentos solo ofrecen una descripción parcial, indícalo.
+- NO inventes información que los documentos no contienen.
 
-    ## Cómo revisar un refrigerador
+## Qué hacer (usando información del usuario + experiencia técnica)
+- Si los documentos traen pasos específicos, úsalos.
+- Si no hay pasos en los documentos, entonces usa tu conocimiento técnico general.
 
-    1. Paso 1: Verifica que esté conectado a la corriente.
-    2. Paso 2: Revisa si el termostato está funcionando.
-    3. Paso 3: Comprueba que el motor no haga ruidos extraños.
+## Referencias
+Por cada fragmento utilizado del RAG, incluye:
+- **Título**
+- **Página**
+- **Source**
+- (Opcional) Una frase breve explicando por qué fue relevante
 
-    **Consejos adicionales:**
+3. Si NO se encontró información útil en los documentos:
+   - Indícalo claramente
+   - Pero igual da pasos técnicos generales seguros y útiles
 
-    - Siempre desenchufa antes de manipular componentes internos.
-    - Documenta cualquier falla para seguimiento.
+5. Sé muy claro, organizado y conciso.
 
-    Responde siempre con este estilo, usando Markdown para todos los títulos, listas y párrafos.
-    `
+Tu prioridad: producir respuestas técnicas confiables, bien estructuradas y fáciles de leer.
+
+Este es el contexto a utilizar: 
+${retrievedDocs}
+      `
     };
 
-
+    // --- 7) ARMAMOS EL BODY PARA GROQ ---
     const body = {
       model: "llama-3.1-8b-instant",
       messages: [systemPrompt, ...messages],
@@ -65,27 +120,22 @@ export async function POST(req: NextRequest) {
       return new Response(errorText, { status: 500 });
     }
 
+    // --- 8) STREAMING ---
     const reader = groqRes.body!.getReader();
 
     const stream = new ReadableStream({
       async start(controller) {
-        const decoder = new TextDecoder();
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           controller.enqueue(value);
         }
-
         controller.close();
       }
     });
 
     return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream"
-      }
+      headers: { "Content-Type": "text/event-stream" }
     });
 
   } catch (err) {
