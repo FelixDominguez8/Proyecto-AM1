@@ -7,6 +7,8 @@ from os.path import isfile, join
 
 from pdf_processor import PDFProcessor
 
+EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+
 
 def preprocess_manuals(manuals_path):
     if not Path(manuals_path).exists():
@@ -26,7 +28,7 @@ def preprocess_manuals(manuals_path):
 
 
 def create_vector_db(docs, persist_directory="./vectordb"):
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL)
 
     vectordb = Chroma.from_documents(
         documents=docs,
@@ -41,7 +43,7 @@ def create_vector_db(docs, persist_directory="./vectordb"):
 
 
 def load_vector_db(persist_directory="./vectordb"):
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL)
 
     vectordb = Chroma(
         collection_name="mis_docs",
