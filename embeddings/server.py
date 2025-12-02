@@ -24,9 +24,9 @@ def read_root(filter_query: Annotated[FilterParams, Query()]):
 
     vectordb = load_vector_db()
 
-    results = vectordb.similarity_search(
+    initial_results = vectordb.similarity_search(
         filter_query.query,
-        k=3,
+        k=5,
     )
 
-    return [map_result(result) for result in results]
+    return [map_result(result) for result in initial_results]

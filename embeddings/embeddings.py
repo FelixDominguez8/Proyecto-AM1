@@ -7,7 +7,7 @@ from os.path import isfile, join
 
 from pdf_processor import PDFProcessor
 
-EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+EMBEDDING_MODEL = "paraphrase-multilingual-mpnet-base-v2"
 
 
 def preprocess_manuals(manuals_path):

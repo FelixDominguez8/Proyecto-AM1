@@ -5,14 +5,34 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class PDFProcessor:
-    def __init__(self, chunk_size=500, overlap=50):
+    def __init__(self, chunk_size=800, overlap=50):
         self.chunk_size = chunk_size
         self.overlap = overlap
 
-    def clean_text(self, text):
-        text = re.sub(r"\n\s*\n", "\n\n", text)
-        text = re.sub(r" +", " ", text)
+    def clean_pdf_text(self, text: str) -> str:
+        # Normalizar espacios en blanco
+        text = re.sub(r"\s+", " ", text)
+
+        # Quitar guiones de separación silábica (ej: "proce-\nsamiento" -> "procesamiento")
+        text = re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", text)
+
+        # Normalizar saltos de línea (quitar los que están en medio de párrafos)
+        text = re.sub(r"(?<=[a-z,])\n(?=[a-z])", " ", text)
+
+        # Preservar saltos de línea importantes (títulos, listas)
+        text = re.sub(r"\n{3,}", "\n\n", text)
+
+        # Quitar caracteres de control raros
         text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", text)
+
+        # 6. Normalizar comillas y símbolos comunes
+        text = text.replace('"', '"').replace('"', '"')
+        text = text.replace(""", "'").replace(""", "'")
+        text = text.replace("–", "-").replace("—", "-")
+
+        # Quitar espacios antes de puntuación
+        text = re.sub(r"\s+([.,;:!?])", r"\1", text)
+
         return text.strip()
 
     def process(self, pdf_path):
@@ -23,6 +43,9 @@ class PDFProcessor:
         )
 
         docs = loader.load()
+
+        for doc in docs:
+            doc.page_content = self.clean_pdf_text(doc.page_content)
 
         og_size = len(docs)
 
