@@ -23,15 +23,21 @@ export default function Home() {
     if (!input.trim() || loading) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
 
+    // 1️⃣ Agregar mensaje del usuario
+    setMessages((prev) => [...prev, userMessage]);
+
+    setInput("");
     setLoading(true);
 
-    const botMessage: Message = { role: "assistant", content: "" };
-    setMessages((prev) => [...prev, botMessage]);
-    const botIndex = messages.length;
+    // 2️⃣ Crear placeholder del bot
+    let botIndex = 0;
+    setMessages((prev) => {
+      botIndex = prev.length; // el bot será el siguiente índice
+      return [...prev, { role: "assistant", content: "" }];
+    });
 
+    // 3️⃣ Llamada al API
     const response = await fetch("/api/chat", {
       method: "POST",
       body: JSON.stringify({ messages: [...messages, userMessage] }),
@@ -83,29 +89,46 @@ export default function Home() {
     setLoading(false);
   };
 
-  return (
-    <div className="flex h-screen w-full bg-zinc-100 dark:bg-black text-black dark:text-zinc-100">
-      <div className="flex flex-col mx-auto w-full max-w-3xl h-full border-l border-r border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950">
 
-        <div className="flex items-center justify-center h-14 border-b border-zinc-300 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur">
-          <h1 className="text-lg font-semibold tracking-tight">Mi Chatbot Técnico</h1>
+  return (
+    <div className="flex h-screen w-full bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-black dark:to-zinc-900 text-black dark:text-zinc-100"
+    style={{
+      backgroundImage: "url('https://images.unsplash.com/photo-1696550579911-4ece0b1899ea?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "center",
+      backgroundSize: "cover",
+    }}
+    >
+      <div className="flex flex-col mx-auto w-full max-w-3xl h-[95vh] mt-[2.5vh] mb-[2.5vh] border-l border-r border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: "url('https://images.unsplash.com/photo-1676676701269-65de47175adf?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
+      >
+
+        <div className="flex items-center justify-center h-16 border-b border-zinc-300 dark:border-zinc-800 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-md shadow-inner">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-800 dark:text-zinc-400">
+            Chat Técnico Inteligente
+          </h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex transition-all duration-200 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-xl px-4 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed ${
+                className={`max-w-xl px-5 py-3 rounded-2xl shadow-md text-[15px] leading-relaxed break-words ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-br-md"
-                    : "bg-zinc-200 dark:bg-zinc-800 text-black dark:text-zinc-200 rounded-bl-md"
+                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md hover:from-blue-600 hover:to-blue-700 transition"
+                    : "bg-gradient-to-tr from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-700 text-black dark:text-zinc-200 rounded-bl-md hover:from-zinc-300 hover:to-zinc-400 dark:hover:from-zinc-700 dark:hover:to-zinc-600 transition"
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose dark:prose-invert whitespace-pre-wrap">
+                  <div className="prose dark:prose-invert whitespace-pre-wrap font-sans">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {msg.content}
                     </ReactMarkdown>
@@ -113,23 +136,21 @@ export default function Home() {
                 ) : (
                   msg.content
                 )}
-
               </div>
             </div>
           ))}
 
           {loading && (
-            <div className="text-sm text-zinc-500 dark:text-zinc-400">Escribiendo…</div>
+            <div className="text-sm text-zinc-800 dark:text-zinc-400 italic animate-pulse">Escribiendo…</div>
           )}
 
           <div ref={bottomRef} />
         </div>
 
-        <div className="p-5 border-t border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+        <div className="p-5 border-t border-zinc-300 dark:border-zinc-800 bg-white/20 dark:bg-zinc-950/20 backdrop-blur-md shadow-inner">
           <div className="relative flex items-center">
-
             <input
-              className="w-full px-5 py-4 pr-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-[15px] focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+              className="w-full px-5 py-4 pr-20 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
               placeholder="Escribe tu pregunta técnica..."
               value={input}
               disabled={loading}
@@ -140,13 +161,13 @@ export default function Home() {
             <button
               onClick={sendMessage}
               disabled={loading}
-              className="absolute right-3 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 transition text-sm"
+              className="absolute right-3 px-5 py-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 shadow-md transition-all"
             >
               Enviar
             </button>
           </div>
 
-          <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-3">
+          <p className="text-center text-xs text-zinc-800 dark:text-zinc-400 mt-3">
             Llama 3.1 · vía Groq · Streaming activado
           </p>
         </div>
