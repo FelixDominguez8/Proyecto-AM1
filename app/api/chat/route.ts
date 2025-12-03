@@ -3,11 +3,8 @@ const { translate } = require('@vitalets/google-translate-api');
 
 export const runtime = "nodejs";
 
-// ---------------------------
-// FUNCIÓN DE DETECCIÓN SIMPLE Y RÁPIDA
-// ---------------------------
+
 function detectLanguageSimple(text: string): string {
-  // Palabras/patrones comunes en español
   const spanishPatterns = [
     /\b(qué|cómo|dónde|cuándo|por qué|cuál|quién)\b/i,
     /\b(el|la|los|las|un|una|unos|unas)\b/i,
@@ -16,7 +13,6 @@ function detectLanguageSimple(text: string): string {
     /[áéíóúñ]/i
   ];
 
-  // Palabras/patrones comunes en inglés
   const englishPatterns = [
     /\b(what|how|where|when|why|which|who)\b/i,
     /\b(the|a|an|is|are|am)\b/i,
@@ -39,13 +35,9 @@ function detectLanguageSimple(text: string): string {
     if (matches) englishScore += matches.length;
   });
 
-  // Si hay empate o no detecta nada claro, default a español
   return englishScore > spanishScore ? 'en' : 'es';
 }
 
-// ---------------------------
-// FUNCIÓN PARA OBTENER EL PROMPT CORRECTO
-// ---------------------------
 function getSystemPrompt(lang: string, retrievedDocs: string): string {
   if (lang === 'en') {
     return `You are a technical assistant specialized in repairing refrigerators, air conditioners, phones, TVs, and home appliances. You have access to information from a RAG system.
@@ -77,7 +69,9 @@ function getSystemPrompt(lang: string, retrievedDocs: string): string {
 
   **3.** [Third step description]
 
-  **Note:** If the RAG documents indicate additional necessary steps, include them as **Step 4, Step 5, etc.** Continue numbering sequentially until all relevant steps from the documents are covered.
+  **Note:** If the RAG documents indicate additional necessary steps, include them as more steps, continue numbering sequentially until all relevant steps from the documents are covered.
+
+  *Note:** Base your steps strictly on the information provided in the retrieved documents, and dont limit yoursef to a set number of steps add as many as needed. Do not add any steps that are not supported by the documents if the documents are relevant.
 
   **✅ Verification:** [How to confirm it worked]
 
@@ -101,7 +95,7 @@ function getSystemPrompt(lang: string, retrievedDocs: string): string {
   ${retrievedDocs}`;
   }
 
-  // Prompt en español (default)
+  // default
   return `Eres un asistente técnico especializado en reparar refrigeradores, aires acondicionados, teléfonos, TVs y electrodomésticos. Tienes acceso a información de un sistema RAG.
 
   Idioma detectado del usuario: Español
@@ -131,7 +125,9 @@ function getSystemPrompt(lang: string, retrievedDocs: string): string {
 
   **3.** [Descripción del tercer paso]
 
-  **Nota:** Si los documentos del RAG indican pasos adicionales necesarios, inclúyelos como **Paso 4, Paso 5, etc.** Continúa numerando secuencialmente hasta cubrir todos los pasos relevantes de los documentos.
+  **Nota:** Si los documentos del RAG indican pasos adicionales necesarios, inclúyelos como mas pasos, continúa numerando secuencialmente hasta cubrir todos los pasos relevantes de los documentos.
+
+  *Nota:** Base sus pasos estrictamente en la información proporcionada en los documentos recuperados y no te limites a un número determinado de pasos agrega tantos como se necesite. No agregues pasos que no estén respaldados por los documentos si estos son relevantes.
 
   **✅ Verificación:** [Cómo confirmar que funcionó]
 
@@ -156,9 +152,6 @@ function getSystemPrompt(lang: string, retrievedDocs: string): string {
 }
 
 
-// ---------------------------
-// TRADUCIR SOLO SI ES NECESARIO (PARA RAG)
-// ---------------------------
 async function translateForRAG(text: string, fromLang: string): Promise<string> {
   if (fromLang === 'en') return text;
 
@@ -166,14 +159,11 @@ async function translateForRAG(text: string, fromLang: string): Promise<string> 
     const result = await translate(text, { from: fromLang, to: 'en' });
     return result.text;
   } catch (error) {
-    console.error('⚠️ Error en traducción, usando texto original:', error);
+    console.error('Error en traduccion, usando texto original:', error);
     return text;
   }
 }
 
-// ---------------------------
-// RUTA PRINCIPAL
-// ---------------------------
 export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
@@ -185,14 +175,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- 1) TOMAMOS EL MENSAJE MÁS RECIENTE DEL USUARIO ---
     const userMessage = messages[messages.length - 1].content;
 
-    // --- 2) DETECTAR IDIOMA (LOCAL, SIN API CALL) ---
     const detectedLang = detectLanguageSimple(userMessage);
     console.log('🌍 Idioma detectado:', detectedLang);
 
-    // --- 3) TRADUCIR PARA RAG SOLO SI ES ESPAÑOL ---
     let ragQuery = userMessage;
     if (detectedLang === 'es') {
       console.log('🔄 Traduciendo query para RAG...');
@@ -200,11 +187,9 @@ export async function POST(req: NextRequest) {
       console.log('📝 Query traducido:', ragQuery);
     }
 
-    // --- 4) LLAMAMOS AL SERVIDOR PYTHON PARA HACER RAG ---
     const url = `http://127.0.0.1:8000/?query=${encodeURIComponent(ragQuery)}`;
     const ragRes = await fetch(url, { method: "GET" });
 
-    // --- 5) TIPAMOS LOS DOCUMENTOS ---
     interface RAGDocument {
       text: string;
       source: string;
@@ -233,11 +218,11 @@ ${doc.text}
         console.log(`✅ ${results.length} documentos recuperados`);
       } else {
         retrievedDocs = "No se encontraron documentos relevantes en la base de conocimiento.";
-        console.log('⚠️ No se encontraron documentos');
+        console.log('No se encontraron documentos');
       }
     } else {
       retrievedDocs = "Error al consultar la base de conocimiento.";
-      console.error('❌ Error en RAG:', ragRes.status);
+      console.error('Error en RAG:', ragRes.status);
     }
 
     // --- 6) OBTENEMOS EL PROMPT CORRECTO SEGÚN EL IDIOMA ---
@@ -291,7 +276,7 @@ ${doc.text}
     });
 
   } catch (err) {
-    console.error('💥 Error en POST:', err);
+    console.error('Error en POST:', err);
     return new Response(
       JSON.stringify({ error: "Server error", details: String(err) }),
       { status: 500 }

@@ -21,7 +21,7 @@ def read_root(filter_query: Annotated[FilterParams, Query()]):
     processor = LLMProcessor()
 
     results = search_db(
-        filter_query.query, vectordb, reranker, processor, k=5, rerank=False
+        filter_query.query, vectordb, reranker, processor, k=5, rerank=True
     )
 
     return results

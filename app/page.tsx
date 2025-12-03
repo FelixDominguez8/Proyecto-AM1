@@ -20,14 +20,12 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ⬅️ Nuevo: historial local
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const firstChatCreated = useRef(false);
 
-  // ⬅️ Cargar historial desde localStorage al iniciar
   useEffect(() => {
     const saved = localStorage.getItem("chat_history");
     if (saved) {
@@ -41,7 +39,6 @@ export default function Home() {
     }
   }, []);
 
-  // ⬅️ Guardar historial en localStorage cuando cambia
   useEffect(() => {
     localStorage.setItem("chat_history", JSON.stringify(history));
   }, [history]);
@@ -51,7 +48,7 @@ export default function Home() {
   }, [messages]);
 
   const saveCurrentChatToHistory = (updatedMessages: Message[]) => {
-    // ⬅️ Crear primer chat SOLO UNA VEZ
+    // primera vez
     if (!activeChatId && !firstChatCreated.current) {
       const id = crypto.randomUUID();
 
@@ -72,16 +69,14 @@ export default function Home() {
       setHistory((prev) => [newItem, ...prev]);
       setActiveChatId(id);
 
-      // ⬅️ Marcar que ya se creó el primer chat
       firstChatCreated.current = true;
 
       return;
     }
 
-    // ⬅️ Si aún no hay chatId (pero ya se intentó crear uno), NO hacer nada
     if (!activeChatId) return;
 
-    // ⬅️ Actualizar el chat existente normalmente
+    // Actualizar
     setHistory((prev) =>
       prev.map((chat) =>
         chat.id === activeChatId
@@ -100,7 +95,6 @@ export default function Home() {
 
 
 
-  // ⬅️ Crear un chat nuevo
   const newChat = () => {
     const id = crypto.randomUUID();
     const newItem: ChatHistoryItem = {
@@ -114,7 +108,6 @@ export default function Home() {
     setMessages([]);
   };
 
-  // ⬅️ Seleccionar un chat del historial
   const selectChat = (id: string) => {
     setActiveChatId(id);
     const found = history.find((h) => h.id === id);
@@ -187,7 +180,7 @@ export default function Home() {
                 role: "assistant",
                 content: (updated[botIndex].content || "") + delta,
               };
-              saveCurrentChatToHistory(updated); // ⬅️ guardar en historial
+              saveCurrentChatToHistory(updated);
               return updated;
             });
           }
@@ -211,7 +204,6 @@ export default function Home() {
         backgroundSize: "cover",
       }}
     >
-      {/* -------------------- SIDEBAR -------------------- */}
       <aside
         className="
           w-64 
@@ -265,7 +257,6 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* -------------------- MAIN CHAT -------------------- */}
       <div
         className="flex flex-col w-full h-screen 
   bg-white dark:bg-zinc-950 border-l border-zinc-300 dark:border-zinc-800 
@@ -278,14 +269,13 @@ export default function Home() {
           backgroundSize: "cover",
         }}
       >
-        {/* Header */}
+
         <div className="flex items-center justify-center h-16 border-b border-zinc-300 dark:border-zinc-800 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-md shadow-inner">
           <h1 className="text-xl font-bold tracking-tight text-zinc-800 dark:text-zinc-400">
             <img src="/1.png" alt="Logo" className="h-45 w-auto" />
           </h1>
         </div>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-30 py-6 space-y-4">
           {messages.map((msg, i) => (
             <div
@@ -316,7 +306,7 @@ export default function Home() {
           ))}
 
           {loading && (
-            <div className="text-sm text-zinc-800 dark:text-zinc-400 italic animate-pulse">
+            <div className="text-sm text-white italic animate-pulse">
               Escribiendo…
             </div>
           )}
@@ -324,7 +314,6 @@ export default function Home() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
         <div className="p-5 border-t border-zinc-300 dark:border-zinc-800 bg-white/20 dark:bg-zinc-950/20 backdrop-blur-md shadow-inner">
           <div className="relative flex items-center">
             <input
