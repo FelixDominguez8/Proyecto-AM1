@@ -1,6 +1,7 @@
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_chroma import Chroma
 from llm import LLMProcessor
+import re
 
 
 from pathlib import Path
@@ -64,24 +65,61 @@ def create_or_load_db(manuals_path=None):
         return load_vector_db()
 
 
-if __name__ == "__main__":
-    MANUALS_PATH = "./manuals"
-    vectordb = create_or_load_db(MANUALS_PATH)
+def model_matches(models, pattern):
+    if not models:
+        return False
+    if isinstance(models, list):
+        return any(pattern.search(str(model)) for model in models)
+    return pattern.search(str(models))
 
-    enhanced_result = LLMProcessor().enhance_query(
-        "How do i connect the pipes in my Everwell model MRTH?"
-    )
+
+def map_result(result):
+    return {
+        "text": result.page_content,
+        "source": result.metadata.get("source"),
+        "page": result.metadata.get("page"),
+        "title": result.metadata.get("title"),
+        "models": result.metadata.get("models"),
+    }
+
+
+def search_db(query, vectordb, reranker, processor, k=5, optimize=True, rerank=True):
+    if not optimize:
+        results = vectordb.similarity_search(query, k=k)
+        results = results if not rerank else reranker.rerank(query, results, top_n=5)
+        return [map_result(doc) for doc in results]
+
+    enhanced_result = processor.enhance_query(query)
     enhanced_query = enhanced_result["query"]
     detected_model = enhanced_result["model"]
 
-    print(f"Enhanced Query: {enhanced_query}")
-    print(f"Detected Model: {detected_model}")
+    if detected_model:
+        initial_results = vectordb.similarity_search(enhanced_query, k=50)
 
-    results = vectordb.similarity_search(enhanced_query, k=3)
+        pattern = re.compile(re.escape(detected_model), re.IGNORECASE)
+        filtered = [
+            doc
+            for doc in initial_results
+            if model_matches(doc.metadata.get("models"), pattern)
+        ]
 
-    for doc in results:
-        print("Texto:", doc.page_content[:120], "...")
-        print("PDF:", doc.metadata.get("source"))
-        print("Página:", doc.metadata.get("page"))
-        print("Models:", doc.metadata.get("models"))
-        print("-" * 40)
+        initial_results = filtered if filtered else initial_results[:5]
+
+    else:
+        initial_results = vectordb.similarity_search(
+            enhanced_query,
+            k=5,
+        )
+
+    initial_results = (
+        initial_results
+        if not rerank
+        else reranker.rerank(query, initial_results, top_n=5)
+    )
+
+    return [map_result(doc) for doc in initial_results]
+
+
+if __name__ == "__main__":
+    MANUALS_PATH = "./manuals"
+    vectordb = create_or_load_db(MANUALS_PATH)
