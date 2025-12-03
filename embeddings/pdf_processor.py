@@ -2,10 +2,11 @@ import re
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.document_loaders.parsers import TesseractBlobParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from llm import LLMProcessor
 
 
 class PDFProcessor:
-    def __init__(self, chunk_size=800, overlap=50):
+    def __init__(self, chunk_size=1000, overlap=200):
         self.chunk_size = chunk_size
         self.overlap = overlap
 
@@ -42,19 +43,27 @@ class PDFProcessor:
             images_parser=TesseractBlobParser(),
         )
 
-        docs = loader.load()
+        pages = loader.load()
 
-        for doc in docs:
-            doc.page_content = self.clean_pdf_text(doc.page_content)
+        model_extractor = LLMProcessor()
+        models = "UNKNOWN"
 
-        og_size = len(docs)
+        for i, page in enumerate(pages):
+            page.page_content = self.clean_pdf_text(page.page_content)
+            page.metadata = dict(page.metadata)
+            if i < 3 and models == "UNKNOWN":  # Solo las primeras 3 paginas
+                models = model_extractor.extract_models(page)
+                if models != "UNKNOWN":
+                    print(f'Model for document {page.metadata["source"]}: {models}')
+                    continue
+
+        for page in pages:
+            page.metadata["models"] = models
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size, chunk_overlap=self.overlap
         )
 
-        chunks = text_splitter.split_documents(docs)
-
-        print(f"Procesado {pdf_path}: {og_size} páginas -> {len(chunks)} chunks")
+        chunks = text_splitter.split_documents(pages)
 
         return chunks
