@@ -1,6 +1,6 @@
 from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_ollama import ChatOllama
+from langchain_chroma import Chroma
+from llm import LLMProcessor
 
 
 from pathlib import Path
@@ -68,10 +68,20 @@ if __name__ == "__main__":
     MANUALS_PATH = "./manuals"
     vectordb = create_or_load_db(MANUALS_PATH)
 
-    results = vectordb.similarity_search("Veo las luz del timer parpadeando", k=3)
+    enhanced_result = LLMProcessor().enhance_query(
+        "How do i connect the pipes in my Everwell model MRTH?"
+    )
+    enhanced_query = enhanced_result["query"]
+    detected_model = enhanced_result["model"]
+
+    print(f"Enhanced Query: {enhanced_query}")
+    print(f"Detected Model: {detected_model}")
+
+    results = vectordb.similarity_search(enhanced_query, k=3)
 
     for doc in results:
         print("Texto:", doc.page_content[:120], "...")
         print("PDF:", doc.metadata.get("source"))
         print("Página:", doc.metadata.get("page"))
+        print("Models:", doc.metadata.get("models"))
         print("-" * 40)

@@ -1,5 +1,6 @@
 from langchain_ollama import ChatOllama
 from langchain.messages import AIMessage
+import re
 
 
 class LLMProcessor:
@@ -15,9 +16,18 @@ class LLMProcessor:
         messages = [
             (
                 "system",
-                """You are an expert at enhancing search queries for better retrieval of technical documents.
-                   Given a user query, add relevant technical terms and synonyms to improve search results.
-                   Return the enhanced query only.""",
+                """Eres un optimizador de consultas para un sistema de búsqueda de manuales técnicos HVAC/refrigeración.
+
+                Tu tarea: reformular la consulta del usuario para maximizar la recuperación de información relevante.
+
+                Reglas:
+                - Expande abreviaciones técnicas (AC→aire acondicionado, BTU, CFM, etc.)
+                - Añade sinónimos técnicos relevantes
+                - Incluye términos en inglés Y español si aplica
+                - Mantén la intención original
+                - NO respondas la pregunta, solo reformúlala
+                - Si detectas un número de modelo, extráelo y añádelo al FINAL en formato [MODEL:modelo_detectado]
+                - Responde ÚNICAMENTE con la consulta optimizada, sin explicaciones""",
             ),
             ("user", f"Original Query: {query}"),
         ]
@@ -27,19 +37,31 @@ class LLMProcessor:
 
             if isinstance(response, AIMessage):
                 if response.content:
-                    return response.content
+                    enhanced_text = response.content
+                    return self.parse_enhanced_query(enhanced_text, query)
                 else:
                     print("WARNING: Empty response for query enhancement")
-                    return query
+                    return {"query": query, "model": None}
             else:
                 print(
                     f"Unexpected response type for query enhancement: {type(response)}"
                 )
-                return query
+                return {"query": query, "model": None}
 
         except Exception as e:
             print(f"Error enhancing query '{query}': {e}")
-            return query
+            return {"query": query, "model": None}
+
+    def parse_enhanced_query(self, enhanced_text, _):
+        model_pattern = r"\[MODEL:([^\]]+)\]"
+        match = re.search(model_pattern, enhanced_text)
+
+        if match:
+            model = match.group(1).strip()
+            clean_query = re.sub(model_pattern, "", enhanced_text).strip()
+            return {"query": clean_query, "model": model}
+        else:
+            return {"query": enhanced_text, "model": None}
 
     def extract_models(self, doc):
         messages = [
@@ -61,7 +83,6 @@ class LLMProcessor:
                     return response.content
                 else:
                     print(f'WARNING: Empty response for {doc.metadata["source"]}')
-                    print(f"Response object: {response}")
                     return "UNKNOWN"
             else:
                 print(
