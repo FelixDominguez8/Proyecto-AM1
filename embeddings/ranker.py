@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 
 
 class LocalReranker:
-    def __init__(self, model_name="BAAI/bge-reranker-v2-m3"):
+    def __init__(self, model_name="cross-encoder/ms-marco-MiniLM-L-12-v2"):
         self.model = CrossEncoder(model_name, max_length=512)
         self.model_name = model_name
 
@@ -44,5 +44,5 @@ class LocalReranker:
         return doc_score_pairs[:top_n]
 
 
-def create_reranker(model_name="BAAI/bge-reranker-v2-m3"):
-    return LocalReranker(model_name=model_name)
+def create_reranker():
+    return LocalReranker()

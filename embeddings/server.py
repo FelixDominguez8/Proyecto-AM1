@@ -9,6 +9,16 @@ import re
 app = FastAPI()
 
 
+class _Config:
+    def __init__(self):
+        self.vectordb = create_or_load_db()
+        self.processor = LLMProcessor()
+        self.reranker = create_reranker()
+
+
+config = _Config()
+
+
 class FilterParams(BaseModel):
     query: str
 
@@ -16,12 +26,18 @@ class FilterParams(BaseModel):
 @app.get("/")
 def read_root(filter_query: Annotated[FilterParams, Query()]):
 
-    vectordb = create_or_load_db()
-    reranker = create_reranker()
-    processor = LLMProcessor()
+    # vectordb = create_or_load_db()
+    reranker = None
+    # processor = LLMProcessor()
 
     results = search_db(
-        filter_query.query, vectordb, reranker, processor, k=5, rerank=False
+        filter_query.query,
+        config.vectordb,
+        config.reranker,
+        config.processor,
+        k=5,
+        rerank=True,
+        optimize=True,
     )
 
     return results
