@@ -26,10 +26,6 @@ class FilterParams(BaseModel):
 @app.get("/")
 def read_root(filter_query: Annotated[FilterParams, Query()]):
 
-    # vectordb = create_or_load_db()
-    reranker = None
-    # processor = LLMProcessor()
-
     results = search_db(
         filter_query.query,
         config.vectordb,

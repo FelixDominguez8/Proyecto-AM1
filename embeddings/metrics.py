@@ -1,6 +1,6 @@
 from typing import List, Dict, Set
 from collections import defaultdict
-from embeddings import create_or_load_db, search_db
+from embeddings import create_or_load_db, search_db_for_metrics
 from ranker import create_reranker
 from llm import LLMProcessor
 import numpy as np
@@ -176,8 +176,8 @@ def run_evaluation_example(vectordb):
     for test_case in eval_dataset[:5]:
         query = test_case["query"]
 
-        results = search_db(
-            query, vectordb, reranker, processor, k=5, optimize_query=True
+        results = search_db_for_metrics(
+            query, vectordb, reranker, processor, k=5, optimize=True, rerank=True
         )
 
         metrics.evaluate_query(query, results, test_case, k=5)

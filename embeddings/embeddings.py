@@ -127,6 +127,52 @@ def search_db(query, vectordb, reranker, processor, k=5, optimize=True, rerank=F
     return [map_result(doc) for doc in initial_results]
 
 
+def search_db_for_metrics(
+    query, vectordb, reranker, processor, k=5, optimize=True, rerank=False
+):
+    if not optimize:
+        results = vectordb.similarity_search(query, k=k)
+        results = results if not rerank else reranker.rerank(query, results, top_n=5)
+        return results
+
+    enhanced_result = processor.enhance_query(query)
+    enhanced_query = enhanced_result["query"]
+    detected_model = enhanced_result["model"]
+
+    if detected_model:
+        initial_results = vectordb.similarity_search(query, k=50)
+
+        initial_results = (
+            initial_results
+            if not rerank
+            else reranker.rerank(enhanced_query, initial_results, top_n=5)
+        )
+
+        pattern = re.compile(re.escape(detected_model), re.IGNORECASE)
+        filtered = [
+            doc
+            for doc in initial_results
+            if model_matches(doc.metadata.get("models"), pattern)
+        ]
+
+        initial_results = filtered if filtered else initial_results[:5]
+
+        return initial_results
+    else:
+        initial_results = vectordb.similarity_search(
+            enhanced_query,
+            k=50,
+        )
+
+    initial_results = (
+        initial_results
+        if not rerank
+        else reranker.rerank(query, initial_results, top_n=5)
+    )
+
+    return initial_results
+
+
 if __name__ == "__main__":
     MANUALS_PATH = "./manuals"
     vectordb = create_or_load_db(MANUALS_PATH)
