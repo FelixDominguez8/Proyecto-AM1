@@ -1,0 +1,1 @@
+Air circulation volume(indoor) m3/h 1200
