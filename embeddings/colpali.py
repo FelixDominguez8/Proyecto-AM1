@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 from typing import Generator, List, Tuple
 
@@ -69,11 +70,11 @@ def iter_pdf_batches(
 
 class ColPaliEmbedder:
     def __init__(self):
-        # self.qdrant = QdrantClient(
-        #     url=os.getenv("QDRANT_URL"),
-        #     api_key=os.getenv("QDRANT_API"),
-        # )
-        self.qdrant = QdrantClient(url="http://localhost:6333")
+        self.qdrant = QdrantClient(
+            url=os.getenv("QDRANT_URL"),
+            api_key=os.getenv("QDRANT_API"),
+        )
+        # self.qdrant = QdrantClient(url="http://localhost:6333")
         self.model = ColIdefics3.from_pretrained(
             MODEL_NAME,
             torch_dtype=torch.bfloat16,
