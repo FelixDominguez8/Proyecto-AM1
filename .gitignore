@@ -12,6 +12,7 @@ qdrant_storage
 
 # testing
 /coverage
+/ParaTesseract
 
 # next.js
 /.next/
