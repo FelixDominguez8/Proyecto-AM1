@@ -68,6 +68,13 @@ def iter_pdf_batches(
     if batch_images:
         yield batch_images, batch_meta
 
+def get_result_image_path(doc_id: str, images_dir: str = "result_images") -> Path:
+    path = Path(images_dir) / f"{doc_id}.jpg"
+    if not path.exists():
+        raise FileNotFoundError(f"No hay imagen cacheada para '{doc_id}'. Ejecuta search() primero.")
+    return path
+
+
 def map_result(point: ScoredPoint):
     payload = point.payload
     source = payload.get("source")
@@ -159,7 +166,9 @@ class ColPaliEmbedder:
             )
             return self.embed_batch(images[:mid], batch_meta[:mid]) + self.embed_batch(images[mid:], batch_meta[mid:])
 
-    def search(self, query: str, k: int = 5):
+    def search(self, query: str, k: int = 5, pdf_dir: str = "./manuals"):
+        IMAGES_DIR = Path("result_images")
+        IMAGES_DIR.mkdir(exist_ok=True)
 
         with torch.no_grad():
             inputs = self.processor.process_queries([query]).to(self.model.device)
@@ -174,7 +183,16 @@ class ColPaliEmbedder:
             with_payload=True,
         )
 
-        return [map_result(point) for point in results.points]
+        mapped = [map_result(point) for point in results.points]
+
+        for result in mapped:
+            pdf_path = Path(pdf_dir) / result["source"]
+            page = result["page"]
+            doc_id = result["doc_id"]
+            img = convert_from_path(str(pdf_path), first_page=page + 1, last_page=page + 1, dpi=150)[0]
+            img.save(IMAGES_DIR / f"{doc_id}.jpg")
+
+        return mapped
 
 
     def print_shape(self, dir_path: str):
