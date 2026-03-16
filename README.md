@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 # Proyecto-AM1
 
-## Iniciar qdrant
+## Iniciar qdrant local
 docker run -p 6333:6333 -p 6334:6334 \
     -v "$(pwd)/qdrant_storage:/qdrant/storage:z" \
     qdrant/qdrant

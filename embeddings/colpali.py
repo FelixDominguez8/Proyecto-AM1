@@ -18,6 +18,7 @@ from qdrant_client.models import (
     MultiVectorConfig,
     PointStruct,
     VectorParams,
+    ScoredPoint
 )
 import argparse
 
@@ -67,6 +68,19 @@ def iter_pdf_batches(
     if batch_images:
         yield batch_images, batch_meta
 
+def map_result(point: ScoredPoint):
+    payload = point.payload
+    source = payload.get("source")
+    source_stem = Path(source).stem
+    page = payload.get("page_num")
+    doc_id = f"{source_stem}_p{page}"
+
+    return {
+        "source": source,
+        "page": page,
+        "doc_id": doc_id,
+        "score": point.score
+    }
 
 class ColPaliEmbedder:
     def __init__(self):
@@ -159,7 +173,8 @@ class ColPaliEmbedder:
             limit=k,
             with_payload=True,
         )
-        return results.points
+
+        return [map_result(point) for point in results.points]
 
 
     def print_shape(self, dir_path: str):

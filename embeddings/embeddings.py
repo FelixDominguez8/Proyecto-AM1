@@ -1,7 +1,7 @@
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_chroma import Chroma
-from llm import LLMProcessor
 import re
+from pathlib import Path
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 
 
 from pathlib import Path
@@ -33,20 +33,21 @@ def preprocess_manuals(manuals_path):
 
 
 def create_vector_db(docs, persist_directory=PERSIST_DIRECTORY):
-    embeddings = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
     vectordb = Chroma.from_documents(
         documents=docs,
         embedding=embeddings,
         collection_name=COLLECTION_NAME,
         persist_directory=persist_directory,
+        collection_metadata={"hnsw:space": "cosine"},
     )
 
     return vectordb
 
 
 def load_vector_db(persist_directory=PERSIST_DIRECTORY):
-    embeddings = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
     vectordb = Chroma(
         collection_name=COLLECTION_NAME,
@@ -73,11 +74,17 @@ def model_matches(models, pattern):
     return pattern.search(str(models))
 
 
-def map_result(result):
+def map_result(result, score=None):
+    source_stem = Path(result.metadata.get("source")).stem
+    page = result.metadata.get("page")
+    doc_id = f"{source_stem}_p{page}"
+
     return {
         "text": result.page_content,
-        "source": result.metadata.get("source"),
-        "page": result.metadata.get("page"),
+        "source": source_stem,
+        "page": page,
+        "score": score,
+        "doc_id": doc_id,
         "title": result.metadata.get("title"),
         "models": result.metadata.get("models"),
     }
@@ -85,39 +92,42 @@ def map_result(result):
 
 def search_db(query, vectordb, reranker, processor, k=5, optimize=True, rerank=True):
     if not optimize:
-        results = vectordb.similarity_search(query, k=k)
-        results = results if not rerank else reranker.rerank(query, results, top_n=5)
-        return [map_result(doc) for doc in results]
+        results_with_scores = vectordb.similarity_search_with_relevance_scores(query, k=k)
+        if rerank:
+            docs = [doc for doc, _ in results_with_scores]
+            reranked = reranker.rerank(query, docs, top_n=5)
+            return [map_result(doc, doc.metadata.get("rerank_score")) for doc in reranked]
+
+        return [map_result(doc, score) for doc, score in results_with_scores]
 
     enhanced_result = processor.enhance_query(query)
     enhanced_query = enhanced_result["query"]
     detected_model = enhanced_result["model"]
 
     if detected_model:
-        initial_results = vectordb.similarity_search(enhanced_query, k=50)
+        initial_results_with_scores = vectordb.similarity_search_with_relevance_scores(enhanced_query, k=50)
 
         pattern = re.compile(re.escape(detected_model), re.IGNORECASE)
         filtered = [
-            doc
-            for doc in initial_results
+            (doc, score)
+            for doc, score in initial_results_with_scores
             if model_matches(doc.metadata.get("models"), pattern)
         ]
 
-        initial_results = filtered if filtered else initial_results[:5]
+        initial_results_with_scores = filtered if filtered else initial_results_with_scores[:5]
 
     else:
-        initial_results = vectordb.similarity_search(
+        initial_results_with_scores = vectordb.similarity_search_with_relevance_scores(
             enhanced_query,
             k=5,
         )
 
-    initial_results = (
-        initial_results
-        if not rerank
-        else reranker.rerank(query, initial_results, top_n=5)
-    )
+    if rerank:
+        docs = [doc for doc, _ in initial_results_with_scores]
+        reranked = reranker.rerank(query, docs, top_n=5)
+        return [map_result(doc, doc.metadata.get("rerank_score")) for doc in reranked]
 
-    return [map_result(doc) for doc in initial_results]
+    return [map_result(doc, score) for doc, score in initial_results_with_scores]
 
 
 if __name__ == "__main__":

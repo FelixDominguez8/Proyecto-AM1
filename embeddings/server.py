@@ -17,6 +17,7 @@ class FilterParams(BaseModel):
 @app.get("/")
 def read_root(filter_query: Annotated[FilterParams, Query()]):
     results = []
+    # print(f"Query: {filter_query.query} | Model: {filter_query.model}")
 
     if filter_query.model == 'colpali':
         colpali_model = ColPaliEmbedder()
@@ -28,7 +29,7 @@ def read_root(filter_query: Annotated[FilterParams, Query()]):
         reranker = create_reranker()
         processor = LLMProcessor()
         results = search_db(
-            filter_query.query, vectordb, reranker, processor, k=5, rerank=True
+            filter_query.query, vectordb, reranker, processor, k=5, rerank=False, optimize=False
         )
     else:
         raise HTTPException(status_code=400, detail='Modelo desconocido, modelos disponibles: colpali, text')
