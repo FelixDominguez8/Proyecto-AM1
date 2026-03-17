@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+import json
 from pathlib import Path
 from typing import Generator, List, Tuple
 
@@ -28,7 +30,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MODEL_NAME = "vidore/colSmol-500M"
-QDRANT_COLLECTION = "hvac_index" 
+QDRANT_COLLECTION = "machinelearning2" 
 BATCH_SIZE = 30
 EMBEDDING_DIM = 128
 
@@ -211,19 +213,29 @@ class ColPaliEmbedder:
         pdfs = self.load_pdfs(dir_path)
         self.create_collection()
 
-        logging_data = {"chunks": 0, "sources": []}
-        for batch_imgs, batch_meta in tqdm(iter_pdf_batches(pdfs, batch_size=1)):
+        logging_data = {"chunks": 0, "sources": [], "batch_times": []}
+        total_start = time.perf_counter()
+
+        for batch_imgs, batch_meta in tqdm(iter_pdf_batches(pdfs, batch_size=7)):
             print("\n\n---"*10, f"Embedding Chunk {logging_data['chunks']}", "---"*10, "\n\n")
             for meta in batch_meta:
                 print(
                     f"Batch {meta["doc_id"]}, source = {meta["source"]}, page = {meta['page_num']}"
                 )
 
+            batch_start = time.perf_counter()
             self.embed_batch(batch_imgs, batch_meta)
+            batch_elapsed = time.perf_counter() - batch_start
+            logging_data["batch_times"].append(batch_elapsed)
+            print(f"Chunk {logging_data['chunks']} tardó {batch_elapsed:.2f}s")
 
             logging_data["chunks"] += 1
 
-        print(f"Total chunks {logging_data['chunks']}")
+        total_elapsed = time.perf_counter() - total_start
+        avg = sum(logging_data["batch_times"]) / len(logging_data["batch_times"]) if logging_data["batch_times"] else 0
+        print(f"\nTotal chunks: {logging_data['chunks']}")
+        print(f"Tiempo total de embeddings: {total_elapsed:.2f}s")
+        print(f"Tiempo promedio por chunk: {avg:.2f}s")
 
 
 if __name__ == "__main__":
@@ -247,7 +259,4 @@ if __name__ == "__main__":
         points = embedder.search(args.query)
 
         for point in points:
-            print(point.payload)
-
-        
-
+            print(json.dumps(point))

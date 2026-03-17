@@ -1,4 +1,8 @@
 import re
+import sys
+import time
+import json
+import argparse
 from pathlib import Path
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
@@ -35,6 +39,7 @@ def preprocess_manuals(manuals_path):
 def create_vector_db(docs, persist_directory=PERSIST_DIRECTORY):
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
+    start = time.perf_counter()
     vectordb = Chroma.from_documents(
         documents=docs,
         embedding=embeddings,
@@ -42,6 +47,8 @@ def create_vector_db(docs, persist_directory=PERSIST_DIRECTORY):
         persist_directory=persist_directory,
         collection_metadata={"hnsw:space": "cosine"},
     )
+    elapsed = time.perf_counter() - start
+    print(f"Tiempo de creación de embeddings ({len(docs)} chunks): {elapsed:.2f}s")
 
     return vectordb
 
@@ -131,5 +138,26 @@ def search_db(query, vectordb, reranker, processor, k=5, optimize=True, rerank=T
 
 
 if __name__ == "__main__":
-    MANUALS_PATH = "./manuals"
-    vectordb = create_or_load_db(MANUALS_PATH)
+    parser = argparse.ArgumentParser(prog="embeddings")
+    parser.add_argument("-e", "--embed", metavar="DIR", help="Generar embeddings desde un directorio de PDFs")
+    parser.add_argument("-q", "--query", metavar="QUERY", help="Buscar en la base de datos")
+
+    args = parser.parse_args()
+
+    if not args.query and not args.embed:
+        parser.print_help()
+        sys.exit(1)
+
+    if args.embed:
+        create_or_load_db(args.embed)
+
+    if args.query:
+        from ranker import create_reranker
+        from llm import LLMProcessor
+        vectordb = create_or_load_db()
+        reranker = create_reranker()
+        processor = LLMProcessor()
+        results = search_db(args.query, vectordb, reranker, processor, k=5, rerank=False, optimize=False)
+        for r in results:
+            data = { "doc_id": r["doc_id"], "source": r['source'], "page": r['page'] }
+            print(json.dumps(data, ensure_ascii=False))
