@@ -24,7 +24,7 @@ function detectLanguageSimple(text: string): string {
   ];
 
   const lowerText = text.toLowerCase();
-  
+
   let spanishScore = 0;
   let englishScore = 0;
 
@@ -41,7 +41,7 @@ function detectLanguageSimple(text: string): string {
   return englishScore > spanishScore ? 'en' : 'es';
 }
 
-function getSystemPrompt(lang: string, retrievedDocs: string): string {
+function getSystemPromptText(lang: string, retrievedDocs: string): string {
   if (lang === 'en') {
     return `You are a Technical Repair Expert for HVAC and refrigeration. Use the provided RAG context to answer.
 
@@ -124,6 +124,90 @@ Contexto: ${retrievedDocs}
 Nota: Usa la "Información del dispositivo" (OCR) para identificar modelos. Si el texto es confuso, prioriza coincidencias que se alineen con los documentos técnicos.`;
 }
 
+function getSystemPromptColpali(lang: string): string {
+  if (lang === 'en') {
+    return `You are a Technical Repair Expert for HVAC and refrigeration. You will receive one or more images of document pages as your context — analyze them visually to extract the relevant technical information and answer the question.
+
+--- LANGUAGE & PRIVACY (CRITICAL) ---
+- Language: ALWAYS English.
+- No Internal Reasoning: Do NOT output thoughts, classifications (Type A/B), or "The user wants...".
+- No RAG Mentions: NEVER mention "images", "pages", "retrieval", "database", or "documents". Sound like innate knowledge.
+- Sources: ONLY allowed in the **References** section.
+
+--- CLASSIFICATION & FORMATS ---
+Detect the intent and use EXACTLY one format:
+
+1. Type A (Informational): Simple facts.
+   ## **ℹ️ Information**
+   [Extracted answer from the document images]
+   ## **📚 References**
+   - **[Document]** | Page [X] | Source: [name]
+
+2. Type B (Technical/Repair): Installation or troubleshooting.
+   ## **📋 Diagnosis**
+   [Problem explanation extracted from the images in 1-4 sentences]
+   ---
+   ## **🔧 Solution**
+   **1.** [Step description]
+   ... (Repeat for ALL steps visible in the images. Do NOT omit or modify sequence).
+   [If applicable: ⚠️ **Warning:** risk description]
+   ---
+   ## **📚 References**
+   - **[Document]** | Page [X] | Source: [name]
+
+--- CONTENT RULES ---
+- Image Priority: Extract steps, diagrams, tables, and warnings directly from the provided images.
+- Read all text visible in the images carefully, including small print, labels, and captions.
+- Fallback: If the images are missing or irrelevant, provide general safe technical guidance.
+- Formatting: Sections divided by ---. Titles ## and **bold**. Numbers **bold**.`;
+  }
+
+  // default
+  return `Eres un Experto en Reparación Técnica de HVAC y refrigeración. Recibirás una o más imágenes de páginas de documentos como contexto — analízalas visualmente para extraer la información técnica relevante y responder la pregunta.
+
+--- IDIOMA Y PRIVACIDAD (CRÍTICO) ---
+- Idioma: SIEMPRE Español.
+- Sin Razonamiento Interno: NO generes pensamientos, clasificaciones (Tipo A/B) o frases como "El usuario quiere...".
+- Sin Menciones al Contexto: NUNCA menciones "imágenes", "páginas", "recuperación", "base de datos" o "documentos". Debe sonar como conocimiento propio.
+- Fuentes: SOLO permitidas en la sección de **Referencias** al final.
+
+--- CLASIFICACIÓN Y FORMATOS ---
+Detecta la intención y usa EXACTAMENTE un formato:
+
+1. Tipo A (Informativo): Datos simples.
+   ## **ℹ️ Información**
+   [Respuesta extraída de las imágenes del documento]
+   ## **📚 Referencias**
+   - **[Nombre del documento]** | Página [X] | Fuente: [nombre]
+
+2. Tipo B (Técnico/Reparación): Instalación o resolución de problemas.
+   ## **📋 Diagnóstico**
+   [Explicación del problema extraída de las imágenes en 1-4 oraciones]
+   ---
+   ## **🔧 Solución**
+   **1.** [Descripción del paso]
+   ... (Repite para TODOS los pasos visibles en las imágenes. NO omitas ni modifiques la secuencia).
+   [Si aplica: ⚠️ **Advertencia:** descripción del riesgo]
+   ---
+   ## **📚 Referencias**
+   - **[Nombre del documento]** | Página [X] | Fuente: [nombre]
+
+--- REGLAS DE CONTENIDO ---
+- Prioridad Visual: Extrae pasos, diagramas, tablas y advertencias directamente de las imágenes proporcionadas.
+- Lee con atención todo el texto visible en las imágenes, incluyendo letra pequeña, etiquetas y pies de página.
+- Contingencia: Si las imágenes faltan o son irrelevantes, brinda guía técnica general segura.
+- Formato: Secciones divididas por ---. Títulos con ## y en **negrita**. Números en **negrita**.`;
+}
+
+function getSystemPrompt(lang: string, retrievedDocs?: string, model: string = 'colpali') {
+
+  if (model === 'colpali') {
+    return getSystemPromptColpali(lang)
+  } else if (model === 'text' && retrievedDocs) {
+    return getSystemPromptText(lang, retrievedDocs)
+  }
+
+}
 
 async function translateForRAG(text: string, fromLang: string): Promise<string> {
   if (fromLang === 'en') return text;
@@ -137,6 +221,58 @@ async function translateForRAG(text: string, fromLang: string): Promise<string> 
   }
 }
 
+interface RAGDocument {
+  doc_id: string;
+  text: string;
+  source: string;
+  page: number;
+  title?: string;
+}
+
+type Model = 'colpali' | 'text'
+
+async function processColpaliResults(results: RAGDocument[], limit: number = 0) {
+  const slice = (limit >= 1 && limit < results.length) ? results.slice(0, limit) : results;
+
+  const imageContents = await Promise.all(
+    slice.map(async (result) => {
+      const res = await fetch(`http://localhost:8000/image/${result.doc_id}`);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      return { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64}` } };
+    })
+  );
+
+  return imageContents.filter((img) => img !== null);
+}
+
+async function processTextResults(results: RAGDocument[]) {
+  let retrievedDocs = ''
+
+  if (results.length > 0) {
+    retrievedDocs = results
+      .map((doc, index) => {
+        return `
+--- ${doc.title || "Sin título"} ---
+[Título]: ${doc.title || "Sin título"}
+[Página]: ${doc.page}
+[Source]: ${doc.source}
+[Texto]:
+${doc.text}
+            `.trim();
+      })
+      .join("\n\n");
+    console.log(`✅ ${results.length} documentos recuperados`);
+  } else {
+    retrievedDocs = "No se encontraron documentos relevantes en la base de conocimiento.";
+    console.log('No se encontraron documentos');
+  }
+
+  return retrievedDocs
+
+}
+
 export async function POST(req: NextRequest) {
   try {
     /// 1) Extraemos los campos usando formData para soportar la imagen y el historial
@@ -146,13 +282,13 @@ export async function POST(req: NextRequest) {
     const messagesRaw = formData.get('messages') as string;
     const messages = messagesRaw ? JSON.parse(messagesRaw) : [];
 
-    let datos_placa = ""; 
+    let datos_placa = "";
 
     // Procesamiento del OCR local si existe un archivo
     if (file) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      
+
       // Guardamos la imagen temporalmente para que el script de Python la lea
       const tempPath = path.join(process.cwd(), 'temp_ocr.jpg');
       await writeFile(tempPath, buffer);
@@ -190,35 +326,22 @@ export async function POST(req: NextRequest) {
     }
 
     // 3) Consulta al RAG (usando la consulta traducida)
-    const url = `http://127.0.0.1:8000/?query=${encodeURIComponent(ragQuery)}`;
+    let model: Model = 'colpali'
+    const url = `http://127.0.0.1:8000/?query=${encodeURIComponent(ragQuery)}&model=${model}`;
     const ragRes = await fetch(url, { method: "GET" });
 
-    interface RAGDocument {
-      text: string;
-      source: string;
-      page: number;
-      title?: string;
-    }
-
     let retrievedDocs = "";
+    let images = null;
 
     if (ragRes.ok) {
       const results: RAGDocument[] = await ragRes.json();
-      if (results.length > 0) {
-        retrievedDocs = results
-          .map((doc) => {
-            return `
-            --- ${doc.title || "Sin título"} ---
-            [Página]: ${doc.page}
-            [Source]: ${doc.source}
-            [Texto]: ${doc.text}
-            `.trim();
-          })
-          .join("\n\n");
-        console.log(`✅ ${results.length} documentos recuperados`);
-      } else {
-        retrievedDocs = "No se encontraron documentos relevantes.";
+
+      if (model === 'colpali') {
+        images = await processColpaliResults(results, 2)
+      } else if (model === 'text') {
+        retrievedDocs = await processTextResults(results)
       }
+
     } else {
       retrievedDocs = "Error al consultar la base de conocimiento.";
     }
@@ -236,20 +359,24 @@ ${userMessage}
       `.trim();
     }
 
-    const systemPromptContent = getSystemPrompt(detectedLang, retrievedDocs);
+    const systemPromptContent = getSystemPrompt(detectedLang, retrievedDocs, model);
     const systemPrompt = {
       role: "system",
       content: systemPromptContent
     };
 
     // 5) Enviamos a Groq
+    const userContent: object[] = [{ type: "text", text: promptConContexto }];
+    if (model === 'colpali' && images && images.length > 0) {
+      userContent.push(...images);
+    }
+
     const body = {
       model: "meta-llama/llama-4-scout-17b-16e-instruct",
-      // Incluimos el historial (messages) y el nuevo mensaje estructurado
       messages: [
-        systemPrompt, 
-        ...messages, 
-        { role: "user", content: promptConContexto }
+        systemPrompt,
+        ...messages,
+        { role: "user", content: userContent }
       ],
       max_tokens: 1500,
       temperature: 0.3,
