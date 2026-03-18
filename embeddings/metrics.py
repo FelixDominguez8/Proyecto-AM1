@@ -1,3 +1,4 @@
+import sys
 from typing import Dict
 from embeddings import create_or_load_db, search_db
 from ranker import create_reranker
@@ -30,12 +31,12 @@ def run_text_embeddings(queries: Dict[str, str]):
     
     for id, query in queries.items():
         results = search_db(
-            query, vectordb, reranker, processor, k=5, rerank=False, optimize=False
+            query, vectordb, reranker, processor, k=5, rerank=True, optimize=True
         )
 
         run[id] = {r['doc_id']: r['score'] for r in results}
-        json_formatted_str = json.dumps(run[id], indent=4)
-        print(json_formatted_str)
+        # json_formatted_str = json.dumps(run[id], indent=4)
+        # print(json_formatted_str)
 
     return Run(run, name='text-embeddings')
 
@@ -138,9 +139,9 @@ def create_evaluation_dataset():
     return evaluation_data
 
 
-def run_evaluation_example(vectordb):
-    queries = get_queries()
-    qrels = get_qrels()
+def run_evaluation_example(select: str):
+    queries = get_queries(select)
+    qrels = get_qrels(select)
     run_colpali = run_colpali_embeddings(queries)
     run_text = run_text_embeddings(queries)
 
@@ -150,7 +151,7 @@ def run_evaluation_example(vectordb):
     report = compare(
         qrels,
         runs=[run_text, run_colpali],
-        metrics=["ndcg@5", "ndcg@10", "map@5", "mrr", "recall@10"],
+        metrics=["ndcg@5", "map@5", "mrr", "recall@10"],
         max_p=0.05  # test estadístico de significancia
     )
 
@@ -158,6 +159,11 @@ def run_evaluation_example(vectordb):
 
 
 if __name__ == "__main__":
-    vectordb = create_or_load_db()
 
-    run_evaluation_example(vectordb)
+    select = 'all'
+
+    if len(sys.argv) > 1:
+        select = sys.argv[1]
+
+    print(f'Getting metrics for {select} queries')
+    run_evaluation_example(select)

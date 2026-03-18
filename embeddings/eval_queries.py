@@ -6,21 +6,21 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p8",
-            "query": "¿Cuáles son los pasos para desactivar la función AUTO-RESTART?",
+            "query": "What are the steps to deactivate the AUTO-RESTART function?",
         }
     ],
     "q2": [
         {
             "relevance": 2,
             "doc_id": "01_p8",
-            "query": "¿Qué ocurre al presionar el botón de emergencia dos veces en menos de 3 segundos?",
+            "query": "What happens when the emergency button is pressed twice within less than 3 seconds?",
         }
     ],
     "q3": [
         {
             "relevance": 2,
             "doc_id": "01_p8",
-            "query": "¿Cuántos beeps emite la unidad al activar correctamente la función AUTO-RESTART?",
+            "query": "How many beeps does the unit emit when the AUTO-RESTART function is correctly activated?",
         }
     ],
     # ─── REMOTE CONTROLLER BUTTONS ───────────────────────────────────────────
@@ -28,38 +28,38 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p9",
-            "query": "¿Qué función activa el botón HEALTHY en el control remoto?",
+            "query": "What function does the HEALTHY button on the remote controller activate?",
         }
     ],
     "q5": [
         {
             "relevance": 2,
             "doc_id": "01_p9",
-            "query": "¿Qué temperatura y velocidad de ventilador activa el modo SUPER en refrigeración?",
+            "query": "What temperature and fan speed does SUPER mode activate in cooling?",
         },
         {
             "relevance": 1,
             "doc_id": "02_p34",
-            "query": "¿Qué temperatura y velocidad de ventilador activa el modo SUPER en refrigeración?",
+            "query": "What temperature and fan speed does SUPER mode activate in cooling?",
         },
     ],
     "q6": [
         {
             "relevance": 2,
             "doc_id": "01_p9",
-            "query": "¿Qué hace el botón ECO en modo calefacción?",
+            "query": "What does the ECO button do in heating mode?",
         },
         {
             "relevance": 1,
             "doc_id": "02_p34",
-            "query": "¿Qué hace el botón ECO en modo calefacción?",
+            "query": "What does the ECO button do in heating mode?",
         },
     ],
     "q7": [
         {
             "relevance": 2,
             "doc_id": "01_p9",
-            "query": "¿Qué sucede al presionar el botón 3D en el control remoto?",
+            "query": "What happens when the 3D button on the remote controller is pressed?",
         }
     ],
     # ─── TIMER MODE ──────────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p10",
-            "query": "¿Cuáles son los pasos para programar el encendido automático (Timer ON)?",
+            "query": "What are the steps to schedule an automatic power-on (Timer ON)?",
         }
     ],
     # ─── FEEL / SLEEP MODES ──────────────────────────────────────────────────
@@ -75,28 +75,28 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p11",
-            "query": "¿A qué temperatura ambiente el modo FEEL activa automáticamente el modo calefacción?",
+            "query": "At what ambient temperature does FEEL mode automatically activate heating mode?",
         }
     ],
     "q10": [
         {
             "relevance": 2,
             "doc_id": "01_p17",
-            "query": "¿Cuántos grados sube la temperatura de consigna en modo SLEEP durante las primeras 2 horas en refrigeración?",
+            "query": "How many degrees does the set temperature rise in SLEEP mode during the first 2 hours in cooling?",
         }
     ],
     "q11": [
         {
             "relevance": 2,
             "doc_id": "01_p17",
-            "query": "¿Cuántas horas después de activar el modo SLEEP se apaga automáticamente el equipo?",
+            "query": "How many hours after activating SLEEP mode does the unit automatically turn off?",
         }
     ],
     "q12": [
         {
             "relevance": 2,
             "doc_id": "01_p17",
-            "query": "¿Cómo ajusta el modo SLEEP la temperatura en modo calefacción durante las primeras 2 horas?",
+            "query": "How does SLEEP mode adjust the temperature in heating mode during the first 2 hours?",
         }
     ],
     # ─── PROTECTION / CLIMATE CONDITIONS ─────────────────────────────────────
@@ -104,21 +104,21 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p18",
-            "query": "¿Cuáles son los límites de temperatura exterior para el modo calefacción en equipos T1?",
+            "query": "What are the outdoor temperature limits for heating mode in T1 units?",
         }
     ],
     "q14": [
         {
             "relevance": 2,
             "doc_id": "01_p18",
-            "query": "¿Cuál es la temperatura exterior máxima para operar en modo refrigeración en equipos T3 (tropical)?",
+            "query": "What is the maximum outdoor temperature for operating in cooling mode in T3 (tropical) units?",
         }
     ],
     "q15": [
         {
             "relevance": 2,
             "doc_id": "01_p18",
-            "query": "¿A qué temperatura de habitación se activa la protección en modo calefacción T1?",
+            "query": "At what room temperature does the protection in T1 heating mode activate?",
         }
     ],
     # ─── INSTALLATION — DISTANCES, TORQUES, PIPES ────────────────────────────
@@ -126,45 +126,45 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p25",
-            "query": "¿Cuál es la distancia máxima permitida entre la unidad interior y la exterior?",
+            "query": "What is the maximum allowable distance between the indoor and outdoor unit?",
         },
         {
             "relevance": 1,
             "doc_id": "03_p5",
-            "query": "¿Cuál es la distancia máxima permitida entre la unidad interior y la exterior?",
+            "query": "What is the maximum allowable distance between the indoor and outdoor unit?",
         },
     ],
     "q17": [
         {
             "relevance": 2,
             "doc_id": "01_p25",
-            "query": "¿Cuál es la diferencia de nivel máxima entre la unidad interior y la exterior?",
+            "query": "What is the maximum level difference between the indoor and outdoor unit?",
         }
     ],
     "q18": [
         {
             "relevance": 2,
             "doc_id": "01_p25",
-            "query": "¿Cuál es el torque de apriete para tubería de 1/4\" (6mm)?",
+            "query": "What is the tightening torque for 1/4\" (6mm) piping?",
         },
         {
             "relevance": 1,
             "doc_id": "03_p12",
-            "query": "¿Cuál es el torque de apriete para tubería de 1/4\" (6mm)?",
+            "query": "What is the tightening torque for 1/4\" (6mm) piping?",
         },
     ],
     "q19": [
         {
             "relevance": 2,
             "doc_id": "01_p25",
-            "query": "¿Cuánto refrigerante adicional (g/m) se debe añadir por metro en modelos de 15/18k BTU de velocidad fija?",
+            "query": "How much additional refrigerant (g/m) must be added per meter for fixed-speed 15/18k BTU models?",
         }
     ],
     "q20": [
         {
             "relevance": 2,
             "doc_id": "01_p25",
-            "query": "¿Cuál es la longitud de tubería incluida en la carga estándar de refrigerante para un modelo de 12k BTU?",
+            "query": "What is the pipe length included in the standard refrigerant charge for a 12k BTU model?",
         }
     ],
     # ─── CABLE SPECIFICATIONS ────────────────────────────────────────────────
@@ -172,12 +172,12 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p27",
-            "query": "¿Cuál es el calibre de cable de alimentación para un modelo de 22/24k BTU tipo inversor?",
+            "query": "What is the power cable gauge for a 22/24k BTU inverter-type model?",
         },
         {
             "relevance": 1,
             "doc_id": "03_p9",
-            "query": "¿Cuál es el calibre de cable de alimentación para un modelo de 22/24k BTU tipo inversor?",
+            "query": "What is the power cable gauge for a 22/24k BTU inverter-type model?",
         },
     ],
     # ─── MAINTENANCE ────────────────────────────────────────────────────────
@@ -185,14 +185,14 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p28",
-            "query": "¿Cada cuánto tiempo deben reemplazarse los filtros electrostáticos y desodorantes?",
+            "query": "How often should the electrostatic and deodorizing filters be replaced?",
         }
     ],
     "q23": [
         {
             "relevance": 2,
             "doc_id": "01_p28",
-            "query": "¿Con qué temperatura máxima de agua se puede limpiar el filtro de polvo?",
+            "query": "What is the maximum water temperature for cleaning the dust filter?",
         }
     ],
     # ─── ERROR CODES — 01.pdf ────────────────────────────────────────────────
@@ -200,14 +200,14 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "01_p29",
-            "query": "¿Cuántas veces parpadea el indicador RUN cuando falla el sensor de temperatura interior?",
+            "query": "How many times does the RUN indicator blink when the indoor temperature sensor fails?",
         }
     ],
     "q25": [
         {
             "relevance": 2,
             "doc_id": "01_p29",
-            "query": "¿Cuántas veces parpadea el indicador RUN cuando falla el motor del ventilador interior?",
+            "query": "How many times does the RUN indicator blink when the indoor fan motor fails?",
         }
     ],
     # ─── FCAC DIMENSIONS & SPECS ─────────────────────────────────────────────
@@ -215,14 +215,14 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p7",
-            "query": "¿Cuáles son las dimensiones A, B y C del modelo FCAC-36?",
+            "query": "What are the A, B, and C dimensions of the FCAC-36 model?",
         }
     ],
     "q27": [
         {
             "relevance": 2,
             "doc_id": "02_p7",
-            "query": "¿Cuánto pesa el modelo FCAC-60 y cuáles son sus dimensiones de ancho y profundidad?",
+            "query": "How much does the FCAC-60 model weigh and what are its width and depth dimensions?",
         }
     ],
     # ─── FCAC ELECTRICAL CHARACTERISTICS ─────────────────────────────────────
@@ -230,7 +230,7 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p8",
-            "query": "¿Cuál es el rango de voltaje de operación (mínimo y máximo) del modelo FCAC-60?",
+            "query": "What is the operating voltage range (minimum and maximum) of the FCAC-60 model?",
         }
     ],
     # ─── FCAC SOUND LEVELS & WIRING ──────────────────────────────────────────
@@ -238,21 +238,21 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p9",
-            "query": "¿Cuál es el nivel de ruido del modelo FCAC-24 en velocidad baja?",
+            "query": "What is the noise level of the FCAC-24 model at low speed?",
         }
     ],
     "q30": [
         {
             "relevance": 2,
             "doc_id": "02_p9",
-            "query": "¿Cuál es el nivel de ruido del modelo FCAC-36 en velocidad alta?",
+            "query": "What is the noise level of the FCAC-36 model at high speed?",
         }
     ],
     "q31": [
         {
             "relevance": 2,
             "doc_id": "02_p9",
-            "query": "¿Cuál es el tamaño del cable de alimentación del FCAC-36?",
+            "query": "What is the power cable size of the FCAC-36?",
         }
     ],
     # ─── ERROR CODES — 02.pdf ────────────────────────────────────────────────
@@ -260,28 +260,28 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p16",
-            "query": "¿Qué significa el código de error E3 en la unidad FCAC?",
+            "query": "What does error code E3 mean on the FCAC unit?",
         }
     ],
     "q33": [
         {
             "relevance": 2,
             "doc_id": "02_p16",
-            "query": "¿Qué indica el código de error E0 en la unidad FCAC?",
+            "query": "What does error code E0 indicate on the FCAC unit?",
         }
     ],
     "q34": [
         {
             "relevance": 2,
             "doc_id": "02_p16",
-            "query": "¿Qué significa el código F0 en la unidad FCAC?",
+            "query": "What does code F0 mean on the FCAC unit?",
         }
     ],
     "q35": [
         {
             "relevance": 2,
             "doc_id": "02_p16",
-            "query": "¿Qué indica el código F3 en el display de la unidad?",
+            "query": "What does code F3 indicate on the unit display?",
         }
     ],
     # ─── VACUUM DRY PROCEDURE ────────────────────────────────────────────────
@@ -289,21 +289,21 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p19",
-            "query": "¿Cuánto tiempo mínimo debe operar la bomba de vacío en el procedimiento de vacío común?",
+            "query": "What is the minimum time the vacuum pump must operate during the standard vacuum procedure?",
         }
     ],
     "q37": [
         {
             "relevance": 2,
             "doc_id": "02_p19",
-            "query": "¿Qué nivel mínimo de vacío en mmHg debe alcanzarse durante el secado?",
+            "query": "What is the minimum vacuum level in mmHg that must be reached during the drying process?",
         }
     ],
     "q38": [
         {
             "relevance": 2,
             "doc_id": "02_p19",
-            "query": "¿Cuánto tiempo se deja en reposo el sistema después del vacío para verificar que no hay fuga?",
+            "query": "How long is the system left at rest after the vacuum to verify there are no leaks?",
         }
     ],
     # ─── WATER DRAINAGE ──────────────────────────────────────────────────────
@@ -311,7 +311,7 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p21",
-            "query": "¿Cuál es la pendiente mínima que debe tener el tubo de drenaje?",
+            "query": "What is the minimum slope the drain pipe must have?",
         }
     ],
     # ─── INSULATION ─────────────────────────────────────────────────────────
@@ -319,14 +319,14 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p24",
-            "query": "¿Qué material de aislamiento se recomienda para la tubería de gas en equipos tipo bomba de calor?",
+            "query": "What insulation material is recommended for the gas pipe in heat pump units?",
         }
     ],
     "q41": [
         {
             "relevance": 2,
             "doc_id": "02_p24",
-            "query": "¿Cuál es la temperatura mínima que debe soportar el aislamiento del lado de alta presión?",
+            "query": "What is the minimum temperature the high-pressure side insulation must withstand?",
         }
     ],
     # ─── FCAC INSTALLATION — HANGING BOLTS ──────────────────────────────────
@@ -334,7 +334,7 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p27",
-            "query": "¿Cuántos pernos colgantes M10 se requieren para la instalación del FCAC?",
+            "query": "How many M10 hanging bolts are required for the FCAC installation?",
         }
     ],
     # ─── FCAC REMOTE CONTROLLER — ECON / TURBO ──────────────────────────────
@@ -342,14 +342,14 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "02_p34",
-            "query": "¿A qué temperatura fija el modo ECON la consigna cuando se activa en modo refrigeración?",
+            "query": "At what fixed temperature does ECON mode set the setpoint when activated in cooling mode?",
         }
     ],
     "q44": [
         {
             "relevance": 2,
             "doc_id": "02_p34",
-            "query": "¿El modo TURBO funciona cuando el equipo está en modo deshumidificación?",
+            "query": "Does TURBO mode work when the unit is in dehumidification mode?",
         }
     ],
     # ─── DAIKIN FTXN — INSTALLATION SITE ────────────────────────────────────
@@ -357,21 +357,21 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "03_p5",
-            "query": "¿Cuál es la distancia mínima entre la unidad interior Daikin FTXN y el techo?",
+            "query": "What is the minimum clearance between the Daikin FTXN indoor unit and the ceiling?",
         }
     ],
     "q46": [
         {
             "relevance": 2,
             "doc_id": "03_p3",
-            "query": "¿Cuál es el alcance máximo del control remoto inalámbrico del Daikin FTXN?",
+            "query": "What is the maximum range of the Daikin FTXN wireless remote controller?",
         }
     ],
     "q47": [
         {
             "relevance": 2,
             "doc_id": "03_p3",
-            "query": "¿Cómo se configura el DIP switch para una unidad Daikin de solo refrigeración (cooling only)?",
+            "query": "How is the DIP switch configured for a Daikin cooling-only unit?",
         }
     ],
     # ─── DAIKIN FTXN — PIPING & WIRING ──────────────────────────────────────
@@ -379,31 +379,31 @@ GROUND_TRUTH = {
         {
             "relevance": 2,
             "doc_id": "03_p6",
-            "query": "¿Qué diámetro debe tener el orificio en la pared para pasar la tubería del Daikin FTXN?",
+            "query": "What diameter should the wall hole be for routing the Daikin FTXN piping?",
         }
     ],
     "q49": [
         {
             "relevance": 2,
             "doc_id": "03_p9",
-            "query": "¿Qué tipo de cable debe usarse para el cableado interunidad cuando la longitud supera los 10 metros en el Daikin FTXN?",
+            "query": "What type of cable must be used for inter-unit wiring when the length exceeds 10 meters in the Daikin FTXN?",
         },
         {
             "relevance": 1,
             "doc_id": "01_p27",
-            "query": "¿Qué tipo de cable debe usarse para el cableado interunidad cuando la longitud supera los 10 metros en el Daikin FTXN?",
+            "query": "What type of cable must be used for inter-unit wiring when the length exceeds 10 meters in the Daikin FTXN?",
         },
     ],
     "q50": [
         {
             "relevance": 2,
             "doc_id": "03_p12",
-            "query": "¿Cuál es el torque de apriete para las tuercas flare del lado del gas (3/8\") en el Daikin FTXN12KEVJU?",
+            "query": "What is the tightening torque for the gas-side flare nuts (3/8\") on the Daikin FTXN12KEVJU?",
         },
         {
             "relevance": 1,
             "doc_id": "01_p25",
-            "query": "¿Cuál es el torque de apriete para las tuercas flare del lado del gas (3/8\") en el Daikin FTXN12KEVJU?",
+            "query": "What is the tightening torque for the gas-side flare nuts (3/8\") on the Daikin FTXN12KEVJU?",
         },
     ],
 }
@@ -551,11 +551,23 @@ VISUAL_TRUTH = {
     ],
 }
 
-def get_qrels():
-    truth = { **GROUND_TRUTH, **VISUAL_TRUTH }
+def get_truth(select: str ='all'):
+    if select == 'all':
+        return { **GROUND_TRUTH, **VISUAL_TRUTH }
+    elif select == 'visual':
+        return VISUAL_TRUTH
+    elif select == 'text':
+        return GROUND_TRUTH
+    else:
+        return { **GROUND_TRUTH, **VISUAL_TRUTH }
+
+
+def get_qrels(select: str):
+    truth = get_truth(select)
+    # print("Total: ", len(truth))
     qrels = { id: { doc['doc_id']: doc['relevance'] for doc in docs } for id, docs in truth.items() }  
     return Qrels(qrels)
 
-def get_queries():
-    truth = { **GROUND_TRUTH, **VISUAL_TRUTH }
+def get_queries(select: str):
+    truth = get_truth(select)
     return { id: docs[0]['query'] for id, docs in truth.items() }  
