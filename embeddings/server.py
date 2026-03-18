@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
+from pathlib import Path
 from typing import Annotated
 from pydantic import BaseModel
 from embeddings import create_or_load_db, search_db
@@ -46,3 +47,16 @@ def get_image(doc_id: str):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return FileResponse(path, media_type="image/jpeg")
+
+
+@app.get("/pdf/{source}")
+def get_pdf(source: str, page: int = Query(default=None, ge=1)):
+    pdf_path = Path("manuals") / source
+    if not pdf_path.exists() or pdf_path.suffix.lower() != ".pdf":
+        raise HTTPException(status_code=404, detail=f"PDF '{source}' no encontrado")
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=\"{source}\""}
+    )

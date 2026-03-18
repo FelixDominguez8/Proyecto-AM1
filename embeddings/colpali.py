@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 import time
 import json
 from pathlib import Path
@@ -170,6 +171,8 @@ class ColPaliEmbedder:
 
     def search(self, query: str, k: int = 5, pdf_dir: str = "./manuals"):
         IMAGES_DIR = Path("result_images")
+        if IMAGES_DIR.exists():
+            shutil.rmtree(IMAGES_DIR)
         IMAGES_DIR.mkdir(exist_ok=True)
 
         with torch.no_grad():

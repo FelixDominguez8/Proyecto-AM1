@@ -140,8 +140,6 @@ Detect the intent and use EXACTLY one format:
 1. Type A (Informational): Simple facts.
    ## **ℹ️ Information**
    [Extracted answer from the document images]
-   ## **📚 References**
-   - **[Document]** | Page [X] | Source: [name]
 
 2. Type B (Technical/Repair): Installation or troubleshooting.
    ## **📋 Diagnosis**
@@ -152,12 +150,11 @@ Detect the intent and use EXACTLY one format:
    ... (Repeat for ALL steps visible in the images. Do NOT omit or modify sequence).
    [If applicable: ⚠️ **Warning:** risk description]
    ---
-   ## **📚 References**
-   - **[Document]** | Page [X] | Source: [name]
 
 --- CONTENT RULES ---
 - Image Priority: Extract steps, diagrams, tables, and warnings directly from the provided images.
 - Read all text visible in the images carefully, including small print, labels, and captions.
+- If image contains diagrams or pictures use them to provide additional context. Mention the diagram or picture used for context.
 - Fallback: If the images are missing or irrelevant, provide general safe technical guidance.
 - Formatting: Sections divided by ---. Titles ## and **bold**. Numbers **bold**.`;
   }
@@ -177,8 +174,6 @@ Detecta la intención y usa EXACTAMENTE un formato:
 1. Tipo A (Informativo): Datos simples.
    ## **ℹ️ Información**
    [Respuesta extraída de las imágenes del documento]
-   ## **📚 Referencias**
-   - **[Nombre del documento]** | Página [X] | Fuente: [nombre]
 
 2. Tipo B (Técnico/Reparación): Instalación o resolución de problemas.
    ## **📋 Diagnóstico**
@@ -189,8 +184,6 @@ Detecta la intención y usa EXACTAMENTE un formato:
    ... (Repite para TODOS los pasos visibles en las imágenes. NO omitas ni modifiques la secuencia).
    [Si aplica: ⚠️ **Advertencia:** descripción del riesgo]
    ---
-   ## **📚 Referencias**
-   - **[Nombre del documento]** | Página [X] | Fuente: [nombre]
 
 --- REGLAS DE CONTENIDO ---
 - Prioridad Visual: Extrae pasos, diagramas, tablas y advertencias directamente de las imágenes proporcionadas.
@@ -332,12 +325,13 @@ export async function POST(req: NextRequest) {
 
     let retrievedDocs = "";
     let images = null;
+    let results: RAGDocument[] = [];
 
     if (ragRes.ok) {
-      const results: RAGDocument[] = await ragRes.json();
+      results = await ragRes.json();
 
       if (model === 'colpali') {
-        images = await processColpaliResults(results, 2)
+        images = await processColpaliResults(results, 4)
       } else if (model === 'text') {
         retrievedDocs = await processTextResults(results)
       }
@@ -400,11 +394,30 @@ ${userMessage}
 
     // 6) Manejo del Stream
     const reader = groqRes.body!.getReader();
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const sourcesSuffix = results.length > 0
+  ? "\n\n---\n**📚 Fuentes consultadas**\n" + results.map(r =>
+      `- [**${r.source}** | Página ${r.page + 1}](http://localhost:8000/pdf/${r.source}#page=${r.page + 1})`
+    ).join("\n")
+  : "";
+
+
     const stream = new ReadableStream({
       async start(controller) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+
+          if (chunk.includes("data: [DONE]") && sourcesSuffix) {
+            const fakeChunk = {
+              choices: [{ delta: { content: sourcesSuffix }, finish_reason: null }]
+            };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(fakeChunk)}\n\n`));
+          }
+
           controller.enqueue(value);
         }
         controller.close();
