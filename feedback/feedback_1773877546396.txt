@@ -1,0 +1,62 @@
+=== REPORTE DE FEEDBACK ===
+    FECHA: 18/3/2026, 17:45:46
+    SENTIMIENTO: LIKE
+
+    [PREGUNTA DEL TÉCNICO]
+    Me podrias hablar de este modelo?
+
+    [RESPUESTA DEL ASISTENTE]
+    ## **ℹ️ Información**
+
+El modelo de equipo de aire acondicionado es un **Window Type Air Conditioner** de marca, con el modelo **MAW10V1QWT**. A continuación, se presentan los detalles técnicos detectados en la placa:
+
+- **Modelo:** MAW10V1QWT
+- **Tipo:** Window Type Air Conditioner (aire acondicionado de ventana)
+- **Voltaje de operación:** **115V~**
+- **Frecuencia:** **60Hz**
+- **Capacidad de enfriamiento:** **10,000 Btu/h**
+- **Corriente:** **9.97A**
+- **Eficiencia energética (CEER):** **15.0**
+- **Presión de diseño:**
+  - **Alta presión:** **520 PSIG / 3.58 MPa**
+  - **Baja presión:** **300 PSIG / 2.07 MPa**
+- **Corriente de carga (RLA):** **9.59A**
+- **Corriente de arranque (FLA):** **1.26A**
+- **Potencia del motor:** **1/5 hp**
+- **Refrigerante:** **R32**
+- **Carga de refrigerante:** **11.280 oz / 0.32 kg**
+- **Fabricante:** **Made in China**
+- **Certificación:** **C US (posiblemente Certification mark for United States)**
+- **Verificación de energía:** **Energy Verified**
+
+## **Especificaciones Técnicas**
+
+- **Tipo de equipo:** Aire acondicionado de ventana
+- **Capacidad de enfriamiento:** 10,000 Btu/h
+- **Eficiencia energética:** CEER 15.0
+- **Presiones de diseño:** 
+  - Alta presión: 520 PSIG
+  - Baja presión: 300 PSIG
+
+## **Aplicaciones**
+
+- **Uso residencial:** Ideal para enfriar habitaciones individuales o áreas pequeñas.
+- **Uso comercial:** Puede ser utilizado en oficinas pequeñas, tiendas o restaurantes.
+
+## **Consideraciones de Instalación**
+
+- **Ventilación adecuada:** Es crucial asegurar una buena ventilación alrededor del equipo para un funcionamiento óptimo.
+- **Conexiones eléctricas:** Verificar que las conexiones eléctricas sean seguras y cumplan con las especificaciones del fabricante.
+
+## **Mantenimiento**
+
+- **Limpieza regular:** Limpiar el filtro de aire y las bobinas del condensador regularmente para mantener la eficiencia.
+- **Revisión de refrigerante:** Verificar periódicamente la carga de refrigerante para asegurar un rendimiento óptimo.
+
+## **📚 Referencias**
+
+- **Placa de especificaciones del equipo** | Fuente: [placa de especificaciones del equipo de aire acondicionado]
+
+    [COMENTARIO DEL TÉCNICO]
+    Muy util
+    ==========================

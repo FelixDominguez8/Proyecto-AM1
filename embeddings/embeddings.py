@@ -11,8 +11,8 @@ from os.path import isfile, join
 from pdf_processor import PDFProcessor
 
 EMBEDDING_MODEL = "paraphrase-multilingual-mpnet-base-v2"
-COLLECTION_NAME = "manuals"
-PERSIST_DIRECTORY = "./vectordb"
+COLLECTION_NAME = "manuals_v1"
+PERSIST_DIRECTORY = "./vectordb_v1"
 
 
 def preprocess_manuals(manuals_path):

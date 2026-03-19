@@ -1,10 +1,34 @@
 import { NextRequest } from "next/server";
 const { translate } = require('@vitalets/google-translate-api');
 import { execSync } from 'child_process';
-import { writeFile } from 'fs/promises';
+import { writeFile} from 'fs/promises';
+import fs from 'fs/promises';
 import path from 'path';
 
 export const runtime = "nodejs";
+
+const globalCfg = global as any;
+
+if (!globalCfg.currentConfig) {
+  globalCfg.currentConfig = {
+    rag_mode: "only-rag",
+    tone_mode: "casual",
+  };
+}
+
+const currentConfig = globalCfg.currentConfig;
+
+const RAG_INSTRUCTIONS = {
+  "only-rag": "REGLA ESTRICTA: Responde basándote ÚNICAMENTE en la documentación técnica proporcionada completa, si hay 10 pasos proporciona esos 10 pasos. Si la información no está en los manuales, indica honestamente que no cuentas con ese dato. No uses conocimientos externos.",
+  "rag-extra": "Utiliza la documentación técnica como fuente principal, pero tienes permitido ampliar la respuesta con consejos prácticos de mantenimiento y buenas prácticas generales de refrigeración para ayudar al técnico.",
+  "rag-ref": "Utiliza tus conocimientos generales de ingeniería como base. Consulta los manuales proporcionados solo como referencia para datos específicos como voltajes, códigos de error o capacidades nominales."
+};
+
+const TONE_INSTRUCTIONS = {
+  "casual": "Adopta un tono cercano, directo y sencillo, como si fueras un colega técnico con años de experiencia ayudando a otro en el campo. Evita formalismos innecesarios.",
+  "normal": "Mantén un tono profesional, equilibrado y servicial. Es el estándar de asistencia técnica.",
+  "formal": "Adopta un tono estrictamente profesional y técnico. Utiliza terminología precisa, estructuras gramaticales impecables y un lenguaje de alto nivel."
+};
 
 
 function detectLanguageSimple(text: string): string {
@@ -41,7 +65,7 @@ function detectLanguageSimple(text: string): string {
   return englishScore > spanishScore ? 'en' : 'es';
 }
 
-function getSystemPromptText(lang: string, retrievedDocs: string): string {
+function getSystemPromptText(lang: string, retrievedDocs: string, ragText: string, toneText: string): string {
   if (lang === 'en') {
     return `You are a Technical Repair Expert for HVAC and refrigeration. Use the provided RAG context to answer.
 
@@ -73,8 +97,8 @@ Detect the intent and use EXACTLY one format:
    - **[Document]** | Page [X] | Source: [name]
 
 --- CONTENT RULES ---
-- RAG Priority: Use RAG steps exclusively. If 10 steps exist, output 10.
-- Fallback: If RAG is missing/irrelevant, provide general safe technical guidance.
+- ${ragText}
+- ${toneText}
 - Formatting: Sections divided by ---. Titles ## and **bold**. Numbers **bold**.
 
 --- CONTEXT & DEVICE INFO ---
@@ -114,8 +138,8 @@ Detecta la intención y usa EXACTAMENTE un formato:
    - **[Nombre del documento]** | Página [X] | Fuente: [nombre]
 
 --- REGLAS DE CONTENIDO ---
-- Prioridad RAG: Usa pasos del RAG exclusivamente. Si hay 10 pasos, entrega los 10.
-- Contingencia: Si el RAG falta o es irrelevante, brinda guía técnica general segura.
+- ${ragText}
+- ${toneText}
 - Formato: Secciones divididas por ---. Títulos con ## y en **negrita**. Números en **negrita**.
 
 --- CONTEXTO E INFO DEL DISPOSITIVO ---
@@ -124,7 +148,7 @@ Contexto: ${retrievedDocs}
 Nota: Usa la "Información del dispositivo" (OCR) para identificar modelos. Si el texto es confuso, prioriza coincidencias que se alineen con los documentos técnicos.`;
 }
 
-function getSystemPromptColpali(lang: string): string {
+function getSystemPromptColpali(lang: string, ragText: string, toneText: string): string {
   if (lang === 'en') {
     return `You are a Technical Repair Expert for HVAC and refrigeration. You will receive one or more images of document pages as your context — analyze them visually to extract the relevant technical information and answer the question.
 
@@ -158,7 +182,8 @@ Detect the intent and use EXACTLY one format:
 --- CONTENT RULES ---
 - Image Priority: Extract steps, diagrams, tables, and warnings directly from the provided images.
 - Read all text visible in the images carefully, including small print, labels, and captions.
-- Fallback: If the images are missing or irrelevant, provide general safe technical guidance.
+- ${ragText}
+- ${toneText}
 - Formatting: Sections divided by ---. Titles ## and **bold**. Numbers **bold**.`;
   }
 
@@ -195,18 +220,25 @@ Detecta la intención y usa EXACTAMENTE un formato:
 --- REGLAS DE CONTENIDO ---
 - Prioridad Visual: Extrae pasos, diagramas, tablas y advertencias directamente de las imágenes proporcionadas.
 - Lee con atención todo el texto visible en las imágenes, incluyendo letra pequeña, etiquetas y pies de página.
-- Contingencia: Si las imágenes faltan o son irrelevantes, brinda guía técnica general segura.
+- ${ragText}
+- ${toneText}
 - Formato: Secciones divididas por ---. Títulos con ## y en **negrita**. Números en **negrita**.`;
 }
 
-function getSystemPrompt(lang: string, retrievedDocs?: string, model: string = 'colpali') {
-
+function getSystemPrompt(
+  lang: string,
+  retrievedDocs: string = '',
+  model: Model = 'colpali',
+  ragText: string = '',
+  toneText: string = ''
+): string {
   if (model === 'colpali') {
-    return getSystemPromptColpali(lang)
-  } else if (model === 'text' && retrievedDocs) {
-    return getSystemPromptText(lang, retrievedDocs)
+    return getSystemPromptColpali(lang, ragText, toneText);
+  } else if (model === 'text') {
+    return getSystemPromptText(lang, retrievedDocs, ragText, toneText);
   }
 
+  return '';
 }
 
 async function translateForRAG(text: string, fromLang: string): Promise<string> {
@@ -275,7 +307,50 @@ ${doc.text}
 
 export async function POST(req: NextRequest) {
   try {
-    /// 1) Extraemos los campos usando formData para soportar la imagen y el historial
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      // Leemos el body UNA SOLA VEZ
+      const body = await req.json();
+
+      // Caso A: Es una actualización de configuración
+      if (body.rag_mode || body.tone_mode) {
+        currentConfig.rag_mode = body.rag_mode || currentConfig.rag_mode;
+        currentConfig.tone_mode = body.tone_mode || currentConfig.tone_mode;
+        console.log("⚙️ Configuración sincronizada:", currentConfig);
+        return new Response(JSON.stringify({ configurado: true }), { status: 200 });
+      }
+
+      // Caso B: Es Feedback (usamos los datos que ya están en 'body')
+      if (body.tipo) { 
+        const { pregunta, respuesta, tipo, comentario } = body; // <--- Ya no usamos await req.json()
+        
+        const feedbackDir = path.join(process.cwd(), 'feedback');
+        await fs.mkdir(feedbackDir, { recursive: true });
+        
+        const fileName = `feedback_${Date.now()}.txt`;
+        const contenido = `
+    === REPORTE DE FEEDBACK ===
+    FECHA: ${new Date().toLocaleString()}
+    SENTIMIENTO: ${tipo.toUpperCase()}
+
+    [PREGUNTA DEL TÉCNICO]
+    ${pregunta}
+
+    [RESPUESTA DEL ASISTENTE]
+    ${respuesta}
+
+    [COMENTARIO DEL TÉCNICO]
+    ${comentario || "Sin comentarios adicionales."}
+    ==========================
+        `.trim();
+
+        await fs.writeFile(path.join(feedbackDir, fileName), contenido, 'utf8');
+        console.log("📂 Feedback guardado en carpeta /feedback");
+        return new Response(JSON.stringify({ enviado: true }), { status: 200 });
+      }
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const pregunta_usuario = formData.get('pregunta_usuario') as string;
@@ -295,7 +370,7 @@ export async function POST(req: NextRequest) {
 
       try {
         // Ejecutamos tesseract.py y capturamos la salida del print()
-        datos_placa = execSync(`python tesseract.py "${tempPath}"`).toString().trim();
+        datos_placa = execSync(`python ./app/api/chat/tesseract.py "${tempPath}"`).toString().trim();
         console.log("✅ OCR local exitoso");
       } catch (ocrError) {
         console.error("❌ Error ejecutando tesseract.py:", ocrError);
@@ -328,22 +403,42 @@ export async function POST(req: NextRequest) {
     // 3) Consulta al RAG (usando la consulta traducida)
     let model: Model = 'colpali'
     const url = `http://127.0.0.1:8000/?query=${encodeURIComponent(ragQuery)}&model=${model}`;
-    const ragRes = await fetch(url, { method: "GET" });
+    
+    // Configuración de paciencia: 60 segundos antes de rendirse
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
     let retrievedDocs = "";
-    let images = null;
+    let images: any = null;
+
+    try {
+      // Agregamos el signal para que el fetch no muera a los 10 segundos
+      const ragRes = await fetch(url, { 
+        method: "GET", 
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId); // Limpiar el cronómetro si Python responde
 
     if (ragRes.ok) {
       const results: RAGDocument[] = await ragRes.json();
 
       if (model === 'colpali') {
-        images = await processColpaliResults(results, 2)
+          images = await processColpaliResults(results, 2);
       } else if (model === 'text') {
-        retrievedDocs = await processTextResults(results)
+          retrievedDocs = await processTextResults(results);
       }
-
     } else {
       retrievedDocs = "Error al consultar la base de conocimiento.";
+    }
+    } catch (fetchError: any) {
+      if (fetchError.name === 'AbortError') {
+        console.error("❌ El servidor de Python tardó demasiado (Timeout)");
+        retrievedDocs = "La base de conocimiento tardó demasiado en procesar.";
+      } else {
+        console.error("❌ Error de conexión con Python:", fetchError);
+        retrievedDocs = "No se pudo conectar con el motor de búsqueda.";
+      }
     }
 
     // 4) Armamos el prompt final para el modelo
@@ -359,11 +454,41 @@ ${userMessage}
       `.trim();
     }
 
-    const systemPromptContent = getSystemPrompt(detectedLang, retrievedDocs, model);
+    const ragInstruction = RAG_INSTRUCTIONS[currentConfig.rag_mode as keyof typeof RAG_INSTRUCTIONS];
+    const toneInstruction = TONE_INSTRUCTIONS[currentConfig.tone_mode as keyof typeof TONE_INSTRUCTIONS];
+
+    // If the user language is English, translate the RAG and tone instructions to English
+    let ragForPrompt = ragInstruction;
+    let toneForPrompt = toneInstruction;
+    if (detectedLang === 'en') {
+      try {
+        ragForPrompt = await translateForRAG(ragInstruction, 'es');
+      } catch (e) {
+        console.error('Error translating ragInstruction to en, using original:', e);
+        ragForPrompt = ragInstruction;
+      }
+      try {
+        toneForPrompt = await translateForRAG(toneInstruction, 'es');
+      } catch (e) {
+        console.error('Error translating toneInstruction to en, using original:', e);
+        toneForPrompt = toneInstruction;
+      }
+    }
+
+    const systemPromptContent = getSystemPrompt(detectedLang, retrievedDocs, model, ragForPrompt, toneForPrompt);
     const systemPrompt = {
       role: "system",
       content: systemPromptContent
     };
+
+      // DEBUG: loguear el prompt que se envía al LLM para verificar RAG/TONE
+      try {
+        console.log('--- SYSTEM PROMPT START ---');
+        console.log(systemPromptContent.slice(0, 4000));
+        console.log('--- SYSTEM PROMPT END ---');
+      } catch (e) {
+        console.error('Error logging systemPromptContent', e);
+      }
 
     // 5) Enviamos a Groq
     const userContent: object[] = [{ type: "text", text: promptConContexto }];
@@ -379,7 +504,7 @@ ${userMessage}
         { role: "user", content: userContent }
       ],
       max_tokens: 1500,
-      temperature: 0.3,
+      temperature: 0.6,
       stream: true
     };
 

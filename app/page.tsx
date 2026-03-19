@@ -54,9 +54,14 @@ export default function Home() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
+      // Si ya existía una miniatura previa, la liberamos de la memoria
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
       const file = files[0];
       setSelectedFile(file);
-      // Crear URL para la miniatura
+      
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -129,6 +134,30 @@ export default function Home() {
     );
   };
 
+  const guardarConfiguracion = async () => {
+    setLoading(true); // Opcional: mostrar un spinner breve
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rag_mode: ragMode,
+          tone_mode: toneMode,
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Configuración sincronizada con el backend");
+        setView("chat"); // Solo volvemos al chat si el backend confirmó
+      }
+    } catch (error) {
+      console.error("Error al guardar configuración:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const newChat = () => {
@@ -168,6 +197,17 @@ export default function Home() {
     setInput("");
     setSelectedFile(null); // Limpiamos la imagen después de capturarla para el envío
     setPreviewUrl(null);
+
+    // --- AQUÍ VAN LOS CAMBIOS ---
+    setInput("");
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    
+    // ESTA ES LA LÍNEA CLAVE:
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; 
+    }
+    // ----------------------------
 
     let botIndex = 0;
     setMessages((prev) => {
@@ -362,8 +402,10 @@ export default function Home() {
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.content}
                         </ReactMarkdown>
-                        {msg.role === "assistant" && (
-                    <div className="flex items-center gap-4 mt-4 pt-4 border-t border-zinc-300/30">
+
+                        {/* Solo mostramos feedback si NO estamos cargando el mensaje actual */}
+                        {msg.role === "assistant" && (!loading || i < messages.length - 1) && (
+                          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-zinc-300/30 animate-in fade-in duration-700">
                       <button 
                         onClick={() => {
                           setCurrentFeedback({ msgIndex: i, type: 'like', comment: "" });
@@ -583,10 +625,10 @@ export default function Home() {
 
               <div className="pt-6 border-t border-zinc-300 dark:border-zinc-800">
                 <button
-                  onClick={() => setView("chat")}
+                  onClick={guardarConfiguracion} // <--- Ahora sí llama a la función de envío
                   className="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20"
                 >
-                  Guardar y Volver al Chat
+                  {loading ? "Guardando..." : "Guardar y Volver al Chat"}
                 </button>
               </div>
             </div>
@@ -622,22 +664,32 @@ export default function Home() {
               >
                 Omitir
               </button>
+              
               <button
-                onClick={() => {
-                  // Validamos que el índice no sea null antes de proceder
+                onClick={async () => {
                   if (currentFeedback.msgIndex !== null) {
-                    const userQuestion = messages[currentFeedback.msgIndex - 1]?.content;
-                    const aiResponse = messages[currentFeedback.msgIndex]?.content;
+                    const userQuestion = messages[currentFeedback.msgIndex - 1]?.content || "Sin pregunta";
+                    const aiResponse = messages[currentFeedback.msgIndex]?.content || "Sin respuesta";
 
-                    // Aquí es donde enviarías los datos para crear el TXT
-                    console.log("Generando reporte para TXT:", {
-                      pregunta: userQuestion,
-                      respuesta: aiResponse,
-                      puntuacion: currentFeedback.type,
-                      comentario: currentFeedback.comment
-                    });
+                    // Enviamos los 4 puntos exactos al backend
+                    try {
+                      await fetch("/api/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          pregunta: userQuestion,
+                          respuesta: aiResponse,
+                          tipo: currentFeedback.type, // 'like' o 'dislike'
+                          comentario: currentFeedback.comment
+                        }),
+                      });
+                      console.log("✅ Feedback enviado correctamente");
+                    } catch (err) {
+                      console.error("❌ Error al enviar feedback:", err);
+                    }
                   }
                   
+                  // Cerramos y limpiamos después del intento de envío
                   setShowFeedbackModal(false);
                   setCurrentFeedback({msgIndex: null, type: null, comment: ""});
                 }}

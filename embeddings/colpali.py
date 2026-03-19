@@ -25,7 +25,8 @@ import argparse
 
 from dotenv import load_dotenv
 
-load_dotenv()
+env_path = Path(__file__).parent.parent / ".env.local"
+load_dotenv(dotenv_path=env_path)
 
 MODEL_NAME = "vidore/colSmol-500M"
 QDRANT_COLLECTION = "hvac_index" 
@@ -91,15 +92,18 @@ def map_result(point: ScoredPoint):
 
 class ColPaliEmbedder:
     def __init__(self):
-        self.qdrant = QdrantClient(
-            url=os.getenv("QDRANT_URL"),
-            api_key=os.getenv("QDRANT_API"),
-        )
+        url = os.getenv("QDRANT_URL")
+        api_key = os.getenv("QDRANT_API")
+        
+        if not url or not api_key:
+            raise ValueError("❌ ERROR: No se cargaron las variables de entorno. Revisa el archivo .env")
+
+        self.qdrant = QdrantClient(url=url, api_key=api_key)
         # self.qdrant = QdrantClient(url="http://localhost:6333")
         self.model = ColIdefics3.from_pretrained(
             MODEL_NAME,
-            torch_dtype=torch.bfloat16,
-            device_map="cuda:0",
+            torch_dtype=torch.float32,
+            device_map="cpu",
         ).eval()
         self.processor = ColIdefics3Processor.from_pretrained(MODEL_NAME)
 

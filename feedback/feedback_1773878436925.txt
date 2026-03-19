@@ -1,0 +1,32 @@
+=== REPORTE DE FEEDBACK ===
+    FECHA: 18/3/2026, 18:00:36
+    SENTIMIENTO: LIKE
+
+    [PREGUNTA DEL TÉCNICO]
+    Como quito e instalo el panel frontal de mi Daikin FTXN?
+
+    [RESPUESTA DEL ASISTENTE]
+    ## **📋 Diagnosis**
+The front panel of your Daikin FTXN air conditioner needs to be removed or installed.
+
+## **🔧 Solution**
+**1.** To remove the front panel, hook your fingers on the tabs located on the left and right sides of the main body. Open the panel until it stops.
+
+**2.** Slide the front panel sideways to disengage the rotating shaft.
+
+**3.** Pull the front panel toward you to remove it.
+
+**4.** To install the front panel, align the tabs of the front panel with the grooves.
+
+**5.** Push the panel all the way in.
+
+**6.** Close the panel slowly.
+
+**7.** Push the center of the lower surface of the panel firmly to engage the tabs.
+
+## **📚 References**
+- **00_CV_3P272446-1.fm** | Page 4 | Source: ./manuals\03.pdf
+
+    [COMENTARIO DEL TÉCNICO]
+    Era exactamente lo que queria
+    ==========================

@@ -1,63 +1,65 @@
+import pytesseract
+import cv2
 import os
-import base64
-import requests
+from jiwer import cer
 
-# 1. CONFIGURACIÓN
-# Asegúrate de que la imagen esté en la misma carpeta o pon la ruta completa
-RUTA_IMAGEN = "Mi1.jpeg" 
-# Aquí puedes pegar tu llave directamente para la prueba rápida
-API_KEY = "xd" 
+# Configuración de Tesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+def cargar_ground_truth(ruta_txt):
+    """Lee el archivo .txt de referencia."""
+    with open(ruta_txt, 'r', encoding='utf-8') as f:
+        texto = f.read().strip()
+    return " ".join(texto.split())
 
-def probar_vision():
-    if not os.path.exists(RUTA_IMAGEN):
-        print(f"❌ No se encontró la imagen en: {RUTA_IMAGEN}")
+def motor_base(img):
+    """OCR Estándar."""
+    # Usamos lang="eng" para el tesseract base
+    texto = pytesseract.image_to_string(img, lang="eng")
+    return " ".join(texto.strip().split())
+
+def motor_pam2(img):
+    """Tu modelo entrenado."""
+    texto = pytesseract.image_to_string(lang="pam2")
+    return " ".join(texto.strip().split())
+
+def procesar_duelo(id_placa):
+    # Ajustamos la ruta a tu estructura exacta
+    base_path = "./imagenes/Nameplates/"
+    
+    # IMPORTANTE: Cambié .png por .jpg que es lo que me pasaste
+    ruta_img = os.path.join(base_path, f"{id_placa}.jpg") 
+    ruta_txt = os.path.join(base_path, f"{id_placa}.txt")
+
+    if not os.path.exists(ruta_img) or not os.path.exists(ruta_txt):
+        print(f"⚠️ Saltando {id_placa}:")
+        print(f"   Buscando imagen en: {os.path.abspath(ruta_img)}")
+        print(f"   Buscando texto en:  {os.path.abspath(ruta_txt)}")
         return
 
-    base64_image = encode_image(RUTA_IMAGEN)
+    img = cv2.imread(ruta_img)
+    gt = cargar_ground_truth(ruta_txt)
 
-    # Estructura exacta que pide la API de Groq
-    payload = {
-        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Identifica este dispositivo de refrigeración. Dime la marca, el modelo y cualquier detalle técnico o especificación que logres leer en las etiquetas o el diseño."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
-                        }
-                    }
-                ]
-            }
-        ],
-        "temperature": 0.1
-    }
+    res_base = motor_base(img)
+    res_pam2 = motor_pam2(img)
 
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    print("⏳ Enviando imagen a Llama 4 Scout...")
+    err_base = cer(gt, res_base)
+    err_pam2 = cer(gt, res_pam2)
     
-    response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-
-    if response.status_code == 200:
-        resultado = response.json()
-        print("\n--- ANÁLISIS DEL MODELO ---")
-        print(resultado['choices'][0]['message']['content'])
-        print("---------------------------\n")
-    else:
-        print(f"❌ Error {response.status_code}: {response.text}")
+    print(f"\n--- REPORTE DE PLACA: {id_placa} ---")
+    print(f"{'MOTOR':<25} | {'ERROR (CER)':<12} | {'PRECISIÓN':<10}")
+    print("-" * 55)
+    print(f"{'Tesseract Base':<25} | {err_base*100:>10.2f}% | {100-(err_base*100):>9.2f}%")
+    print(f"{'PAM2 Especializado':<25} | {err_pam2*100:>10.2f}% | {100-(err_pam2*100):>9.2f}%")
+    
+    if err_base > 0:
+        mejora = ((err_base - err_pam2) / err_base * 100)
+        print(f"🚀 MEJORA NETA: {mejora:.1f}%")
 
 if __name__ == "__main__":
-    probar_vision()
+    # Si tus archivos se llaman E1.jpg y E1.txt, esto debería funcionar
+    placas_a_testear = ["E1", "E2"]
+    
+    print("Iniciando Validación Cruzada de Modelos...")
+    for placa in placas_a_testear:
+        procesar_duelo(placa)
